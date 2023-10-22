@@ -1,4 +1,3 @@
-
 from typing import List, Tuple
 
 
@@ -8,7 +7,6 @@ def parse_group_of_integers(file: str) -> List[List[int]]:
     Example:
     123
     456
-
     789
     """
     input = open(file, 'r')
