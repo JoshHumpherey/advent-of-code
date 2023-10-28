@@ -1,7 +1,7 @@
-from typing import List
+from typing import Any, List
 
 
-def print_grid(grid: List[List[any]]) -> None:
+def print_grid(grid: List[List[Any]]) -> None:
     """
     Print out a 2D array
     Example:
@@ -13,5 +13,4 @@ def print_grid(grid: List[List[any]]) -> None:
         output = ""
         for val in row:
             output += str(val)
-        print(output)
-    
+        print(output)    
