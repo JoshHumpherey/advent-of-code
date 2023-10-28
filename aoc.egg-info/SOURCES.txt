@@ -1,0 +1,10 @@
+README.md
+setup.py
+2018/__init__.py
+aoc.egg-info/PKG-INFO
+aoc.egg-info/SOURCES.txt
+aoc.egg-info/dependency_links.txt
+aoc.egg-info/top_level.txt
+lib/__init__.py
+lib/parse.py
+lib/pretty_print.py

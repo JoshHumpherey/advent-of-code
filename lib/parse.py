@@ -135,3 +135,14 @@ def parse_string_integer_tuples(file: str) -> List[Tuple[str, int]]:
         output.append([l[0], int(l[1])])
     
     return output
+
+def parse_integers(file: str) -> List[int]:
+    """
+    Parses a list of integers
+    Example:
+    +1
+    -2
+    +3
+    """
+    input = open(file, 'r')
+    return [int(x.strip()) for x in input.readlines()]
