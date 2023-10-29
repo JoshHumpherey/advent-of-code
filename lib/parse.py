@@ -26,7 +26,7 @@ def parse_group_of_integers(file: str) -> List[List[int]]:
 
     return output
 
-def parse_pairs(file: str) -> List[List[str]]:
+def parse_string_pairs(file: str) -> List[List[str]]:
     """
     Parses a pair of two string values split by a space
     Example:
@@ -39,6 +39,22 @@ def parse_pairs(file: str) -> List[List[str]]:
 
     for l in lines:
         output.append(l.strip().split(' '))
+    return output
+
+def parse_integer_pairs(file: str) -> List[Tuple[int, int]]:
+    """
+    Parses a pair of two integer values split by a comma & space
+    Example:
+    1, 2
+    3, 4
+    """
+    input = open(file, 'r')
+    lines = input.readlines()
+    output = []
+
+    for l in lines:
+        pair = l.strip().split(', ')
+        output.append([int(pair[0]), int(pair[1])])
     return output
 
 def parse_strings(file: str) -> List[str]:
