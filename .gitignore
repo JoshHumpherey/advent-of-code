@@ -1,3 +1,7 @@
 # VSCode Files
 .vscode
 __pycache__
+
+# Python Files
+dist/
+aoc.egg-info/
