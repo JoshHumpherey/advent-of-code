@@ -51,7 +51,11 @@ def topological_sort() -> str:
     processed = set()
 
     while queue:              
-        next_node = queue.pop(get_next_idx(queue, rev_graph, processed))
+        next_idx = get_next_idx(queue, rev_graph, processed)
+        if next_idx == -1:
+            break
+
+        next_node = queue.pop(next_idx)
         processed.add(next_node)
         order += next_node
 
@@ -60,13 +64,65 @@ def topological_sort() -> str:
                 if n not in processed and n not in queue:
                     queue.append(n)
         queue = sorted(queue)
-        # print(f"Queue: {queue}")
-        # print(f"Order: {order}")
-        # print("...........")
 
     if len(order) == len(steps):
         return order
 
     return ""
 
+def get_node_cost(node: str) -> int:
+    node_cost = {}
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    for index, letter in enumerate(alphabet):
+        node_cost[letter] = index + 1
+    return node_cost[node] + 60
+
+def multi_topological_sort() -> Tuple[str, int]:
+    graph, rev_graph, steps = build_graph()
+    worker_limit = 5
+    order = ""
+    processed = set()
+    queue = []
+
+    for s in steps:
+        if s not in rev_graph.keys():
+            queue.append(s)
+    queue = sorted(queue)
+    
+    in_progress_workers = []
+    time = 0
+    while queue or in_progress_workers:
+        # free up the finished workers
+        to_remove = []
+        for i in range(len(in_progress_workers)):
+            completed_time, node = in_progress_workers[i]
+            if completed_time == time:
+                processed.add(node)
+                order += node
+                to_remove.append(i)
+                if node in graph:
+                    for n in graph[node]:
+                        if n not in processed and n not in queue:
+                            queue.append(n)
+            queue = sorted(queue)
+            
+        new_in_progress = []
+        for i in range(len(in_progress_workers)):
+            if i not in to_remove:
+                new_in_progress.append(in_progress_workers[i])
+        in_progress_workers = new_in_progress
+
+        # allow free workers to pick up a task
+        while len(queue) > 0  and len(in_progress_workers) < worker_limit:
+            next_idx = get_next_idx(queue, rev_graph, processed)
+            if next_idx == -1:
+                break
+            next_node = queue.pop(next_idx)
+            in_progress_workers.append([time+get_node_cost(next_node), next_node])
+        
+        time += 1
+
+    return order, time-1
+
 print(topological_sort())
+print(multi_topological_sort())

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Handle local imports
+export PYTHONPATH=.
+
 # Check if both arguments are provided
 if [ $# -ne 2 ]; then
   echo "Please provide the year and day as arguments."
