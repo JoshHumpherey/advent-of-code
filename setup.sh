@@ -28,7 +28,9 @@ if [ ! -f "$year/day$day/solution.py" ]; then
 
 def example() -> None:
     data = parse_integers(\"$year/day$day/input.txt\")
-    return None" > "$year/day$day/solution.py"
+    return None
+    
+example()" > "$year/day$day/solution.py"
 fi
 
 # Create the input.txt file if it doesn't exist
