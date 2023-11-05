@@ -1,5 +1,6 @@
 from typing import Any, List
-
+import sys
+import numpy as np
 
 def print_grid(grid: List[List[Any]]) -> None:
     """
@@ -13,4 +14,14 @@ def print_grid(grid: List[List[Any]]) -> None:
         output = ""
         for val in row:
             output += str(val)
-        print(output)    
+        print(output)
+
+def print_spaced_grid(grid: List[List[int]]) -> None:
+    """
+    Print out a 2D integer array with padding for negative numbers
+    Example:
+    -1  2 -3
+     2  7  10
+    """
+    np.set_printoptions(threshold=sys.maxsize)
+    print(np.matrix(grid))
