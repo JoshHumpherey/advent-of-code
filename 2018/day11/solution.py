@@ -1,3 +1,4 @@
+import os
 from typing import List, Tuple
 from lib.parse import parse_integers
 from lib.initialize import create_grid
@@ -25,28 +26,32 @@ def create_power_grid() -> List[List[int]]:
 
     return grid
 
-def get_box_sum(x_start: int, y_start: int, grid: List[List[int]]) -> int:
+def get_box_sum(x_start: int, y_start: int, grid: List[List[int]], size: int) -> int:
     area = 0
-    y_vals = [y_start, y_start+1, y_start+2]
-    x_vals = [x_start, x_start+1, x_start+2]
-    for y in y_vals:
-        for x in x_vals:
+    for y in range(y_start, y_start+size):
+        for x in range(x_start, x_start+size):
             if 1 <= y <= len(grid)-1 and 1 <= x <= len(grid[0])-1:
                 area += grid[y][x]
     return area
 
-def get_largest_area() -> Tuple[int, int]:
+def get_largest_area() -> Tuple[int, int, int]:
     grid = create_power_grid()
-    best_pair = (-1, -1)
+    best_pair = (-1, -1, -1)
     best_area = 0
 
     for y in range(1, len(grid)):
         for x in range(1, len(grid[0])):
-            area = get_box_sum(x_start=x, y_start=y, grid=grid)
-            if area > best_area:
-                best_area = area
-                best_pair = (x, y)
-    
+            os.system("clear")
+            print(f"Evaluating {x,y}")
+            x_lim = len(grid[0])-x
+            y_lim = len(grid)-y
+            lim = min(x_lim, y_lim)
+            for size in range(1, lim):
+                area = get_box_sum(x_start=x, y_start=y, grid=grid, size=size)
+                if area > best_area:
+                    best_area = area
+                    best_pair = (x, y, size)
+
     return best_pair
 
 print(get_largest_area())
