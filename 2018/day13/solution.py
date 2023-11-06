@@ -1,3 +1,4 @@
+from ast import Tuple
 import os
 import time
 from typing import List
@@ -106,7 +107,7 @@ class Kart:
         # print(f"Last Turn was {self.last_turn.name} so I'm now going in {self.dir}")
         self.increment_intersection()
 
-    def advance(self, grid: List[List[str]], karts: List['Kart']) -> None:
+    def advance(self, grid: List[List[str]], karts: List['Kart']):
         self.r += self.dir.value[0]
         self.c += self.dir.value[1]
 
@@ -118,9 +119,9 @@ class Kart:
 
         for k in karts:
             if k.r == self.r and k.c == self.c and k.id != self.id:
-                raise Exception(f"Collision detected at {[self.c, self.r]}")
+                return k.id, self.id
 
-        return None
+        return "", ""
 
 def print_grid_with_kart_overlay(grid: List[List[str]], karts: List[Kart]) -> None:
     os.system("clear")
@@ -139,7 +140,7 @@ def print_grid_with_kart_overlay(grid: List[List[str]], karts: List[Kart]) -> No
         print(pretty)
     time.sleep(TICK_LEN)
 
-def example() -> None:
+def simulate() -> None:
     grid = parse_string_grid("2018/day13/input.txt")
     karts: List[Kart] = []
     for r in range(len(grid)):
@@ -153,11 +154,25 @@ def example() -> None:
                     grid[r][c] = "-"
 
     # print_grid_with_kart_overlay(grid=grid, karts=karts)
-    for _ in range(1_000):
+    for _ in range(100_000):
+        to_remove = set()
         karts = sorted(karts, key=lambda kart: (kart.r, kart.c))
         for k in karts:
             # print_grid_with_kart_overlay(grid, karts)
-            k.advance(grid=grid, karts=karts)
+            id1, id2 = k.advance(grid=grid, karts=karts)
+            to_remove.add(id1)
+            to_remove.add(id2)
         
+        remaining_karts = []
+        for k in karts:
+            if k.id not in to_remove:
+                remaining_karts.append(k)
+
+        karts = remaining_karts
+        if len(karts) <= 1:
+            print(f"{[karts[0].c,karts[0].r]}")
+            break
+        
+    print(f"Remaining karts: {len(karts)}")
     
-example()
+simulate()
