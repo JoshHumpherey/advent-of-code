@@ -117,7 +117,7 @@ def parse_integer_grid(file: str) -> List[List[int]]:
     
     return grid
 
-def parse_string_grid(file: str) -> List[List[int]]:
+def parse_string_grid(file: str) -> List[List[str]]:
     """
     Parses a 2D matrix of string characters
     Example:
@@ -128,11 +128,18 @@ def parse_string_grid(file: str) -> List[List[int]]:
     input = open(file, 'r')
     lines = input.readlines()
     grid = []
+    longest_row = 0
 
     for row in lines:
-        parsed_row = [x for x in row.strip()]
+        parsed_row = [x for x in row.rstrip()]
         grid.append(parsed_row)
+        longest_row = max(longest_row, len(row))
     
+    for r in range(len(grid)):
+        to_add = longest_row - len(grid[r])
+        for _ in range(to_add):
+            grid[r].append(" ")
+
     return grid
 
 def parse_string_integer_tuples(file: str) -> List[Tuple[str, int]]:
