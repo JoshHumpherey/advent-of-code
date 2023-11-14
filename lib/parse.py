@@ -1,3 +1,4 @@
+import re
 from typing import List, Tuple
 
 
@@ -169,3 +170,23 @@ def parse_integers(file: str) -> List[int]:
     """
     input = open(file, 'r')
     return [int(x.strip()) for x in input.readlines()]
+
+def parse_x_y_pairs(file: str) -> List[Tuple[str, str]]:
+    """
+    Parses a list of x/y pairs and gets their values as strings
+    Example:
+    x=495, y=2..7
+    y=7, x=495..501
+    """
+    input = open(file, 'r')
+    lines = input.readlines()
+    output = []
+
+    for l in lines:
+        l = l.strip().split(", ")
+        if l[0][0:2] == "x=":
+            output.append([l[1][2:], l[0][2:]])
+        else:
+            output.append([l[0][2:], l[1][2:]])
+    
+    return output
