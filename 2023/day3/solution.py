@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from lib.parse import parse_string_grid
+import math
 
 NON_SYMBOLS = {"0","1","2","3","4","5","6","7","8","9","."," "}
 
@@ -14,6 +15,14 @@ def is_adj(grid: List[List[any]], coords: List[Tuple[int, int]]) -> bool:
             else:
                 return True
     return False
+
+def get_gears(grid: List[List[any]],) -> set:
+    gears = set()
+    for r in range(len(grid)):
+        for c in range(len(grid[0])):
+            if grid[r][c] == "*":
+                gears.add((r,c))
+    return gears
 
 def get_numbers(grid: List[List[any]]) -> List[Tuple[int, Tuple[int, int]]]:
     numbers = []
@@ -43,4 +52,26 @@ def get_part_numbers() -> int:
             res += val
     return res
 
+def get_gear_numbers() -> int:
+    grid = parse_string_grid("2023/day3/input.txt")
+    numbers = get_numbers(grid)
+    gears = get_gears(grid)
+    res = 0
+
+    for gear_r, gear_c in gears:
+        touches = []
+        for val, coords in numbers:
+            touch = False
+            for r,c in coords:
+                if abs(gear_r - r) <= 1 and abs(gear_c - c) <= 1:
+                    touch = True
+            if touch:
+                touches.append(val)
+        if len(touches) == 2:
+            res += math.prod(touches)
+    
+    return res
+        
+
 print(get_part_numbers())
+print(get_gear_numbers())
