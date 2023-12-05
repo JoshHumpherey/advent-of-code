@@ -190,3 +190,26 @@ def parse_x_y_pairs(file: str) -> List[Tuple[str, str]]:
             output.append([l[0][2:], l[1][2:]])
     
     return output
+
+def parse_string_groups(file: str) -> List[str]:
+    """
+    Parses a list of string groups
+    Example:
+    ABC
+    DEF
+
+    GHI
+    """
+    input = open(file, 'r')
+    res = []
+    local = []
+    for x in input.readlines():
+        x = x.strip()
+        if x == "":
+            res.append(local)
+            local = []
+        else:
+            local.append(x)
+    if len(local) > 0:
+        res.append(local)
+    return res
