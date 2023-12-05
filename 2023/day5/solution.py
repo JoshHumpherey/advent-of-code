@@ -8,28 +8,31 @@ def parse_input():
     ranges = []
 
     for i in range(1, len(maps)):
-        print(maps[i])
-        mapping = defaultdict(int)
+        spans = []
         for j in range(1, len(maps[i])):
             row = [int(x) for x in maps[i][j].split(" ")]
             dest, source, to_add = row[0], row[1], row[2]
-            for _ in range(to_add):
-                mapping[source] = dest
-                source += 1
-                dest += 1
-        ranges.append(mapping)
+            diff = dest - source
+            spans.append([source, source+to_add-1, diff])
+            
+        ranges.append(spans)
 
     return seeds, ranges
-            
+
+def get_output_from_spans(num: int, spans: List[List[int]]) -> int:
+    for start, end, step in spans:
+        if start <= num and num <= end:
+            return num + step
+    return num
+
+
 def get_smallest_location() -> int:
     seeds, ranges = parse_input()
     best = float('inf')
 
     for num in seeds:
-        for range in ranges:
-            if num in range:
-                num = range[num]
-        print(num)
+        for spans in ranges:
+            num = get_output_from_spans(num=num, spans=spans)
         best = min(best, num)
     
     return best
