@@ -37,5 +37,20 @@ def get_smallest_location() -> int:
     
     return best
 
-print(get_smallest_location())
+def get_smallest_location_within_ranges() -> int:
+    seed_ranges, ranges = parse_input()
+    best = float('inf')
+    for i in range(1, len(seed_ranges), 2):
+        start_seed = seed_ranges[i-1]
+        end_seed = start_seed + seed_ranges[i]
+        print(f"Simulating from {start_seed} to {end_seed}: {end_seed-start_seed}")
+        for num in range(start_seed, end_seed):
+            if num % 1_000_000 == 0:
+                print(f"On Seed {num} - best: {best}")
+            for spans in ranges:
+                num = get_output_from_spans(num=num, spans=spans)
+            best = min(best, num)
+    return best
 
+print(get_smallest_location())
+print(get_smallest_location_within_ranges())
