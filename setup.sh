@@ -24,13 +24,13 @@ fi
 
 # Create the solution.py file if it doesn't exist and add the specified code
 if [ ! -f "$year/day$day/solution.py" ]; then
-  echo "from lib.parse import parse_integers
+  echo "from lib.parse import parse_strings
 
 def example() -> None:
-    data = parse_integers(\"$year/day$day/input.txt\")
+    data = parse_strings(\"$year/day$day/input.txt\")
     return None
     
-example()" > "$year/day$day/solution.py"
+print(example())" > "$year/day$day/solution.py"
 fi
 
 # Create the input.txt file if it doesn't exist
