@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from lib.parse import parse_string_groups
-from collections import defaultdict
+import concurrent.futures
 
 def parse_input():
     maps = parse_string_groups("2023/day5/input.txt")
@@ -37,20 +37,31 @@ def get_smallest_location() -> int:
     
     return best
 
+def simulate_range(start_seed, end_seed, ranges):
+    print(f"Simulating Range: {start_seed} - {end_seed}")
+    res = float('inf')
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(get_output_from_spans, num=num, spans=ranges) for num in range(start_seed, end_seed)]
+        results = [future.result() for future in concurrent.futures.as_completed(futures)]
+        res = min(results)
+    return res
+
 def get_smallest_location_within_ranges() -> int:
-    seed_ranges, ranges = parse_input()
-    best = float('inf')
-    for i in range(1, len(seed_ranges), 2):
-        start_seed = seed_ranges[i-1]
-        end_seed = start_seed + seed_ranges[i]
-        print(f"Simulating from {start_seed} to {end_seed}: {end_seed-start_seed}")
-        for num in range(start_seed, end_seed):
-            if num % 1_000_000 == 0:
-                print(f"On Seed {num} - best: {best}")
-            for spans in ranges:
-                num = get_output_from_spans(num=num, spans=spans)
-            best = min(best, num)
-    return best
+    raw_seed_ranges, ranges = parse_input()
+    seed_ranges = []
+    global_best = float('inf')
+
+    for i in range(1, len(raw_seed_ranges), 2):
+        start_seed = raw_seed_ranges[i-1]
+        end_seed = start_seed + raw_seed_ranges[i] - 1
+        seed_ranges.append([start_seed, end_seed])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(simulate_range, range[0], range[1], ranges) for range in seed_ranges]
+        local_bests = [future.result() for future in concurrent.futures.as_completed(futures)]
+        global_best = min(local_bests)
+    
+    return global_best
 
 print(get_smallest_location())
 print(get_smallest_location_within_ranges())
