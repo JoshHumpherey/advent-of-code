@@ -28,5 +28,22 @@ def calculate_numbers_to_win() -> int:
         ways_to_win.append(local_wins)
     
     return math.prod(ways_to_win)
-    
+
+def calculate_combined_to_win() -> int:
+    times, records = parse_races()
+    time, record = "", ""
+    for t in times:
+        time += str(t)
+    for r in records:
+        record += str(r)
+    time, record = int(time), int(record)
+
+    res = 0
+    for i in range(1, time+1):
+        local_record = i * (time - i)
+        if local_record > record:
+            res += 1
+    return res
+
 print(calculate_numbers_to_win())
+print(calculate_combined_to_win())
