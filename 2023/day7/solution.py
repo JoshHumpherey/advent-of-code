@@ -3,21 +3,26 @@ from lib.parse import parse_strings
 from enum import Enum
 from collections import defaultdict
 
+NON_JOKER_CARDS = ["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2"]
+
 CARD_RANKS = {
     "A": 14,
     "K": 13,
     "Q": 12,
     "J": 11,
     "T": 10,
-    "9": 9,
-    "8": 8,
-    "7": 7,
-    "6": 6,
-    "5": 5,
-    "4": 4,
-    "3": 3,
-    "2": 2,
 }
+
+def get_card_rank(card: str, wild_enabled: bool = False) -> int:
+    if card == "J":
+        if wild_enabled:
+            return 1
+        else:
+            return CARD_RANKS["J"]
+    elif card in CARD_RANKS:
+        return CARD_RANKS[card]
+    else:
+        return int(card)
 
 class HandType(Enum):
     FIVE_OF_KIND = 7
@@ -27,6 +32,7 @@ class HandType(Enum):
     TWO_PAIR = 3
     ONE_PAIR = 2
     HIGH_CARD = 1
+    UNSET = 0
 
 def get_hand_type(cards: List[str]) -> HandType:
     counts = defaultdict(int)
@@ -56,20 +62,46 @@ def get_hand_type(cards: List[str]) -> HandType:
     else:
         return HandType.ONE_PAIR
 
+def get_wild_hand_type(cards: List[str]) -> HandType:
+    counts = defaultdict(int)
+    for c in cards:
+        counts[c] += 1
+    if "J" not in counts or counts["J"] <= 0:
+        return get_hand_type(cards)
+    
+    best = HandType.UNSET
+    for c in NON_JOKER_CARDS:
+        replaced = False
+        next_cards = []
+        for new in cards:
+            if new == "J" and not replaced:
+                replaced = True
+                next_cards.append(c)
+            else:
+                next_cards.append(new)
+
+        temp = get_wild_hand_type(cards=next_cards)
+        if temp.value > best.value:
+            best = temp
+    
+    return best
+
+
 class Hand:
 
-    def __init__(self, cards: List[str], bid: int) -> None:
+    def __init__(self, cards: List[str], bid: int, wild_enabled: bool = False) -> None:
         self.cards = cards
         self.bid = bid
-        self.type = get_hand_type(cards)
+        self.wild_enabled = wild_enabled
+        self.type = get_hand_type(cards) if not wild_enabled else get_wild_hand_type(cards)
 
     def beats(self, opponent: 'Hand') -> bool:
         if self.type.value > opponent.type.value:
             return True
         elif self.type.value == opponent.type.value:
             for i in range(0, 5):
-                my_card = CARD_RANKS[self.cards[i]]
-                their_card = CARD_RANKS[opponent.cards[i]]
+                my_card = get_card_rank(self.cards[i], self.wild_enabled)
+                their_card = get_card_rank(opponent.cards[i], opponent.wild_enabled)
                 if my_card > their_card:
                     return True
                 elif their_card > my_card:
@@ -110,13 +142,12 @@ def merge_sort(hands: List[Hand]) -> List[Hand]:
     
     return res
 
-
-def get_hands_sum() -> int:
+def get_hands_sum(wild_enabled: bool) -> int:
     game_states = parse_strings("2023/day7/input.txt")
     hands = []
     for g in game_states:
         raw_game = g.split(" ")
-        hands.append(Hand(cards=raw_game[0], bid=int(raw_game[1])))
+        hands.append(Hand(cards=raw_game[0], bid=int(raw_game[1]), wild_enabled=wild_enabled))
 
     hands = merge_sort(hands)
     res = 0
@@ -127,5 +158,5 @@ def get_hands_sum() -> int:
 
     return res        
 
-
-print(get_hands_sum())
+print(get_hands_sum(wild_enabled=False))
+print(get_hands_sum(wild_enabled=True))
