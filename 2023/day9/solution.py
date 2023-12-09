@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from lib.parse import parse_strings
 
 def parse_sequences() -> List[List[int]]:
@@ -8,7 +8,7 @@ def parse_sequences() -> List[List[int]]:
         res.append([int(x) for x in d.split(" ")])
     return res
 
-def expand_sequence(sequence: List[int]) -> int:
+def create_layers(sequence: List[int]) -> List[List[int]]:
     layers = [sequence]
 
     while True:
@@ -18,7 +18,10 @@ def expand_sequence(sequence: List[int]) -> int:
 
         layers.append(next_layer)
         if set(next_layer) == {0}:
-            break
+            return layers
+
+def expand_end_sequence(sequence: List[int]) -> int:
+    layers = create_layers(sequence)
     
     for i in range(len(layers)-1, -1, -1):
         if i == len(layers)-1:
@@ -30,13 +33,28 @@ def expand_sequence(sequence: List[int]) -> int:
 
     return layers[0][-1]
 
-def find_expanded_sum() -> None:
+def expand_start_sequence(sequence: List[int]) -> int:
+    layers = create_layers(sequence)
+    
+    for i in range(len(layers)-1, -1, -1):
+        if i == len(layers)-1:
+            layers[i] = [0] + layers[i]
+        else:
+            right_val = layers[i][0]
+            bottom_val = layers[i+1][0] if i+1 < len(layers) else 0
+            layers[i] = [right_val - bottom_val] + layers[i]
+
+    return layers[0][0]
+
+def find_expanded_sums() -> Tuple[int, int]:
     seq = parse_sequences()
-    res = 0
+    ends = 0
+    starts = 0
 
     for s in seq:
-        res += expand_sequence(s)
+        ends += expand_end_sequence(s)
+        starts += expand_start_sequence(s)
 
-    return res
+    return ends, starts
 
-print(find_expanded_sum())
+print(find_expanded_sums())
