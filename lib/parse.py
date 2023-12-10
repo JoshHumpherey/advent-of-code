@@ -134,7 +134,7 @@ def parse_string_grid(file: str) -> List[List[str]]:
     for row in lines:
         parsed_row = [x for x in row.rstrip()]
         grid.append(parsed_row)
-        longest_row = max(longest_row, len(row))
+        longest_row = max(longest_row, len(row)) - 1
     
     for r in range(len(grid)):
         to_add = longest_row - len(grid[r])
