@@ -1,8 +1,38 @@
-from typing import List
+from typing import List, Tuple
 from lib.parse import parse_string_grid
 
-def get_expanded_grid() -> List[List[str]]:
+class Space:
+
+    def __init__(self, grid: List[List[str]], empty_rows: set, empty_cols: set, modifier: int) -> None:
+        self.grid = grid
+        self.empty_rows = empty_rows
+        self.empty_cols = empty_cols
+        self.modifier = modifier
+        self.galaxies = []
+
+        for r in range(len(self.grid)):
+            for c in range(len(self.grid[0])):
+                if self.grid[r][c] == "#":
+                    self.galaxies.append([r,c])
+
+    def dist(self, g1: Tuple[int, int], g2: Tuple[int, int]) -> int:
+        dist = abs(g1[1] - g2[1]) + abs(g1[0] - g2[0])
+        r_range = sorted([g1[0], g2[0]])
+        c_range = sorted([g1[1], g2[1]])
+
+        for r in self.empty_rows:
+            if r_range[0] < r and r < r_range[1]:
+                dist += self.modifier
+        for c in self.empty_cols:
+            if c_range[0] < c and c < c_range[1]:
+                dist += self.modifier
+
+        return dist
+
+
+def get_space(modifier: int) -> Space:
     grid = parse_string_grid("2023/day11/input.txt")
+
     empty_rows = set()
     for r in range(len(grid)):
         seen = False
@@ -23,110 +53,18 @@ def get_expanded_grid() -> List[List[str]]:
         if not seen:
             empty_cols.add(c)
 
-    temp_grid = []
-    for r in range(len(grid)):
-        if r in empty_rows:
-            temp_grid.append(["." for _ in range(len(grid[0]))])
-        temp_grid.append(grid[r])
-    grid = temp_grid
+    return Space(grid=grid, empty_rows=empty_rows, empty_cols=empty_cols, modifier=modifier)
     
-    temp_grid = [[] for _ in range(len(grid))]
-    for c in range(len(grid[0])):
-        for r in range(len(grid)):
-            if c in empty_cols:
-                temp_grid[r].append(".")
-            temp_grid[r].append(grid[r][c])
-
-    grid = temp_grid
-    return grid
-
-
-def get_galaxy_map(grid: List[List[str]]) -> dict:
-    galaxies = {}
-    count = 0
-    for r in range(len(grid)):
-        for c in range(len(grid[0])):
-            if grid[r][c] == "#":
-                galaxies[(r,c)] = str(count)
-                count += 1
-
-    return galaxies
-
-def get_neighboring_galaxies(grid: List[List[str]], galaxies: dict, start_row: int, start_col: int) -> list:
-    queue = [[start_row, start_col]]
-    res = []
-    visited = set()
-    dist = 0
-
-    while queue:
-        next_queue = []
-        for r, c in queue:
-            if r < 0 or c < 0 or r >= len(grid) or c >= len(grid[0]) or (r,c) in visited:
-                continue
-            elif (r,c) in galaxies and (r,c) != (start_row, start_col):
-                res.append([r, c, dist])
-            
-            visited.add((r,c))
-            next_queue.append([r-1, c])
-            next_queue.append([r+1, c])
-            next_queue.append([r, c-1])
-            next_queue.append([r, c+1])
-        
-        dist += 1
-        queue = next_queue
-    
-    return res
-
-
-def get_weighted_galaxy_graph(grid: List[List[str]], galaxies: dict) -> dict:
-    galaxy_weights = {}
-
-    for loc, galaxy in galaxies.items():
-        galaxy_weights[galaxy] = get_neighboring_galaxies(grid, galaxies, loc[0], loc[1])
-
-    return galaxy_weights
-    grid = get_expanded_grid()
-    galaxies = get_galaxy_map(grid)
-    galaxy_weights = get_weighted_galaxy_graph(grid, galaxies)
-
-    visited = [0]*len(galaxies.keys())
-    row,col = next(iter(galaxies.keys()))
-    total = 0
-
-    while sum(visited) != len(visited):
-        g = galaxies[(row,col)]
-        visited[int(g)] = 1
-        next_row, next_col, best = -1, -1, float('inf')
-        for r,c,d in galaxy_weights[g]:
-            new_g = galaxies[(r,c)]
-            if visited[int(new_g)] == 0 and d < best:
-                best = d
-                next_row, next_col = r, c
-
-        row, col = next_row, next_col
-        if row == -1 and col == -1:
-            return total
-        else:
-            total += best
-
-    return total 
 
 def get_total_weights() -> int:
-    grid = get_expanded_grid()
-    galaxies = get_galaxy_map(grid)
-    galaxy_weights = get_weighted_galaxy_graph(grid, galaxies)
-
+    space = get_space(modifier=1)
     total = 0
-    added = set()
+    for i in range(0, len(space.galaxies)):
+        for j in range(i+1, len(space.galaxies)):
+            local = space.dist(space.galaxies[i], space.galaxies[j])
+            # print(f"{i+1}->{j+1}: {local}")
+            total += local
 
-    for source_galaxy, dists in galaxy_weights.items():
-        for r,c,d in dists:
-            dest_galaxy = galaxies[(r,c)]
-            if str(source_galaxy + dest_galaxy) not in added:
-                total += d
-            added.add(str(source_galaxy + dest_galaxy))
-            added.add(str(dest_galaxy + source_galaxy))
-    
     return total
 
 print(get_total_weights())
