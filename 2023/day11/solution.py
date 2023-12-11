@@ -56,8 +56,10 @@ def get_space(modifier: int) -> Space:
     return Space(grid=grid, empty_rows=empty_rows, empty_cols=empty_cols, modifier=modifier)
     
 
-def get_total_weights() -> int:
-    space = get_space(modifier=1)
+def get_total_weights(modifier: int = 1) -> int:
+    if modifier > 1:
+        modifier -= 1
+    space = get_space(modifier=modifier)
     total = 0
     for i in range(0, len(space.galaxies)):
         for j in range(i+1, len(space.galaxies)):
@@ -67,4 +69,5 @@ def get_total_weights() -> int:
 
     return total
 
-print(get_total_weights())
+print(get_total_weights(modifier=1))
+print(get_total_weights(modifier=1_000_000))
