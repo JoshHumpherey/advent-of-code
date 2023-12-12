@@ -1,3 +1,4 @@
+import os
 from typing import List
 from lib.parse import parse_strings
 
@@ -53,7 +54,28 @@ def get_sums() -> int:
     for diagram, nums in springs:
         local = get_possibilities(diagram, nums)
         res += local
-        
+
     return res
 
-print(get_sums())
+def get_expanded_sums() -> int:
+    springs = get_springs()
+    for i in range(len(springs)):
+        orig_diagram = springs[i][0]
+        orig_nums = springs[i][1]
+        diagram, nums = [], []
+        for _ in range(5):
+            diagram.extend(orig_diagram)
+            nums.extend(orig_nums)
+        springs[i] = [diagram, nums]   
+
+    res = 0
+    count = 0
+    for diagram, nums in springs:
+        os.system("clear")
+        print(f"Processing {count}")
+        res += get_possibilities(diagram, nums)
+        count += 1
+    
+    return res
+
+print(get_expanded_sums())
