@@ -32,45 +32,7 @@ def get_expanded_springs():
 
     return springs
 
-
-def get_possibilities(diagram: List[str], nums: List[int]) -> int:
-    potential = []
-
-    @functools.lru_cache
-    def generate(idx: int, l: Tuple) -> None:
-        if idx >= len(diagram):
-            potential.append(l)
-        elif diagram[idx] == "?":
-            generate(idx+1, l + (".",))
-            generate(idx+1, l + ("#",))
-        else:
-            generate(idx+1, l + (diagram[idx],))
-    
-    def score(l: List[str]) -> List[int]:
-        curr = ""
-        res = []
-
-        for item in l:
-            if item == "#":
-                curr += "#"
-            else:
-                if len(curr) > 0:
-                    res.append(len(curr))
-                    curr = ""
-        if len(curr) > 0:
-            res.append(len(curr))
-        
-        return res
-
-    generate(0, ())
-    total = 0
-    for p in potential:
-        if score(p) == nums:
-            total += 1
-    return total
-
 def get_possibilities_memo(diagram: List[str], nums: List[int]) -> int:
-    # print(f"{''.join(diagram)}, {nums}")
 
     @functools.lru_cache
     def generate_efficient(idx: int, streak: int, nums: Tuple) -> int:
