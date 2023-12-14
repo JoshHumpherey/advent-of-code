@@ -4,7 +4,7 @@ import time
 from typing import List
 from lib.parse import parse_string_grid
 
-SIM_TIME = 0.5
+SIM_TIME = 0.1
 
 STONE = "O"
 BLOCK = "#"
@@ -16,12 +16,20 @@ class Direction(Enum):
     WEST = [0, -1]
     EAST = [0, 1]
 
-def print_grid(grid: List[List[str]]) -> None:
-    os.system("clear")
+def print_grid(grid: List[List[str]], debug: bool = False) -> None:
+    if not debug:
+        return
+    # os.system("clear")
     for row in grid:
         print(''.join(row))
     print()
     time.sleep(SIM_TIME)
+
+def cache_key(grid: List[List[str]]) -> str:
+    key = ""
+    for row in grid:
+        key += ''.join(row)
+    return key
 
 def slide_rocks(grid: List[List[str]], dir: Direction) -> bool:
     prev = []
@@ -67,6 +75,14 @@ def calculate_load(grid: List[List[str]]) -> int:
     
     return res
 
+def resolve_spin_cycle(grid: List[List[str]]) -> None:
+    idx = 0
+    full_cycle = [Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST]
+
+    while idx < len(full_cycle):
+        if slide_rocks(grid, full_cycle[idx]):
+            idx += 1
+        print_grid(grid)
 
 def get_north_load() -> int:
     grid = parse_string_grid("2023/day14/input.txt")
@@ -74,4 +90,28 @@ def get_north_load() -> int:
     print_grid(grid)
     return calculate_load(grid)
 
-print(get_north_load())
+def get_spin_cycle_load() -> int:
+    grid = parse_string_grid("2023/day14/input.txt")
+    cache = {}
+    diff = 0
+
+    for i in range(1_000_000_000):
+        resolve_spin_cycle(grid)
+        key = cache_key(grid)
+        if key in cache:
+            print(f"DETECTED CYCLE: from {i} to {cache[key]}")
+            diff = i - cache[key]
+            break
+        else:
+            cache[key] = i
+    
+    to_adv = 1_000_000_000 % (diff + i + 1)
+    print(diff)
+    for _ in range(to_adv):
+        print(calculate_load(grid))
+        print_grid(grid, debug=True)
+        resolve_spin_cycle(grid)
+
+    return calculate_load(grid)
+
+print(get_spin_cycle_load())
