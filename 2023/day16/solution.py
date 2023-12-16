@@ -96,8 +96,8 @@ class Grid:
             raise Exception(f"Unknown Tile: {s}")
         return next_beams
     
-    def shoot_beams(self):
-        beams = [Beam(r=0,c=0,dir=Direction.SOUTH)]
+    def shoot_beams(self, start: Beam):
+        beams = [start]
         # self.print(beams)
         while beams:
             next_beams = []
@@ -119,7 +119,25 @@ class Grid:
 def get_energized_area() -> int:
     data = parse_string_grid("2023/day16/input.txt")
     grid = Grid(data)
-    grid.shoot_beams()
-    return len(grid.energized)
-    
+    grid.shoot_beams(start=Beam(r=0,c=-1,dir=Direction.EAST))
+    return len(grid.energized) - 1
+
+def get_best_starting_config() -> int:
+    data = parse_string_grid("2023/day16/input.txt")
+    best = 0
+    for r in range(len(data)):
+        for c in range(len(data[0])):
+            grid = Grid(data)
+            if r == 0:
+                grid.shoot_beams(start=Beam(r-1, c, Direction.SOUTH))
+            elif r == len(data)-1:
+                grid.shoot_beams(start=Beam(r+1, c, Direction.NORTH))
+            elif c == 0:
+                grid.shoot_beams(start=Beam(r, c-1, Direction.EAST))
+            elif c == len(data[0])-1:
+                grid.shoot_beams(start=Beam(r, c-1, Direction.WEST)) 
+            best = max(best, len(grid.energized)-1)            
+    return best
+
 print(get_energized_area())
+print(get_best_starting_config())
