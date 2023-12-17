@@ -1,11 +1,7 @@
 from enum import Enum
-import os
-import time
 from typing import List
 from lib.parse import parse_integer_grid
 import heapq
-from copy import deepcopy
-from rich import print
 
 class Direction(Enum):
     NORTH = [-1,0]
@@ -15,34 +11,6 @@ class Direction(Enum):
 
     def __lt__(self, other):
         return self.value < other.value
-
-DIR_MAP = {
-    "NORTH": "^",
-    "SOUTH": "v",
-    "WEST": "<",
-    "EAST": ">",
-}
-STREAK_LIM = 3
-
-def print_grid(grid: List[List[str]], history) -> None:
-    for r in range(len(grid)):
-        pretty = "[white]"
-        for c in range(len(grid[0])):
-            match = False
-            d = "@"
-            for rr, cc, dir in history:
-                if [r,c] == [rr, cc]:
-                    match = True
-                    d = dir
-                    break
-            if match:
-                pretty += f"[red]{DIR_MAP[dir.name]}[/red]"
-            else:
-                pretty += str(grid[r][c])
-
-        pretty += "[/white]"
-        print(pretty)
-    print()
 
 def get_streak(streak: int, old: Direction, new: Direction) -> int:
     if old == new:
@@ -75,16 +43,53 @@ def lowest_cost_path(grid: List[List[int]]) -> int:
             row, col = r + next_dir.value[0], c + next_dir.value[1]
             if row < 0 or col < 0 or row >= len(grid) or col >= len(grid[0]):
                 continue
-            elif prev_dir == next_dir and streak >= STREAK_LIM:
+            elif prev_dir == next_dir and streak >= 3:
                 continue
             else:
                 heapq.heappush(queue, ([curr_cost + grid[row][col], row, col, next_dir, get_streak(streak, prev_dir, next_dir)]))
     
     return -1
 
+def lowest_cost_path_ultra(grid: List[List[int]]) -> int:
+    queue = [(0, 0, 0, Direction.EAST, 0, [])]
+    seen = set()
+
+    while queue:
+        curr_cost, r, c, prev_dir, streak, history = heapq.heappop(queue)
+        if r == len(grid)-1 and c == len(grid[0])-1:
+            if streak >= 4:
+                return curr_cost
+            else:
+                continue
+        elif (r,c,prev_dir,streak) in seen:
+            continue
+
+        seen.add((r,c,prev_dir,streak))
+        if streak < 4:
+            row, col = r + prev_dir.value[0], c + prev_dir.value[1]
+            if row < 0 or col < 0 or row >= len(grid) or col >= len(grid[0]):
+                continue
+            else:
+                heapq.heappush(queue, ([curr_cost + grid[row][col], row, col, prev_dir, streak+1, history + [[row,col]]]))
+        elif streak >= 4 and streak <= 10:
+            for next_dir in get_next_dirs(current_dir=prev_dir):
+                row, col = r + next_dir.value[0], c + next_dir.value[1]
+                if next_dir == prev_dir and streak == 10:
+                    continue
+                elif row < 0 or col < 0 or row >= len(grid) or col >= len(grid[0]):
+                    continue
+                else:
+                    heapq.heappush(queue, ([curr_cost + grid[row][col], row, col, next_dir, get_streak(streak, prev_dir, next_dir), history + [[row,col]]]))
+            
+    return -1
 
 def get_lowest_cost_path() -> int:
     grid = parse_integer_grid("2023/day17/input.txt")
     return lowest_cost_path(grid)
+
+def get_lowest_cost_path_ultra() -> int:
+    grid = parse_integer_grid("2023/day17/input.txt")
+    return lowest_cost_path_ultra(grid)
     
 print(get_lowest_cost_path())
+print(get_lowest_cost_path_ultra())
