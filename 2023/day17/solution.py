@@ -60,18 +60,17 @@ def get_next_dirs(current_dir: Direction):
         return [Direction.NORTH, Direction.WEST, Direction.SOUTH]
 
 def lowest_cost_path(grid: List[List[int]]) -> int:
-    queue = [(0, 0, 0, Direction.EAST, 0, set())]
-    best = float('inf')
+    queue = [(0, 0, 0, Direction.EAST, 0)]
+    seen = set()
+
     while queue:
-        curr_cost, r, c, prev_dir, streak, history = queue.pop(0)
+        curr_cost, r, c, prev_dir, streak = heapq.heappop(queue)
         if r == len(grid)-1 and c == len(grid[0])-1:
-            if curr_cost < best:
-                best = curr_cost
-            continue
-        elif (r,c) in history:
+            return curr_cost
+        elif (r,c,prev_dir,streak) in seen:
             continue
 
-        history.add((r,c))
+        seen.add((r,c,prev_dir,streak))
         for next_dir in get_next_dirs(current_dir=prev_dir):
             row, col = r + next_dir.value[0], c + next_dir.value[1]
             if row < 0 or col < 0 or row >= len(grid) or col >= len(grid[0]):
@@ -79,9 +78,9 @@ def lowest_cost_path(grid: List[List[int]]) -> int:
             elif prev_dir == next_dir and streak >= STREAK_LIM:
                 continue
             else:
-                queue.append([curr_cost + grid[row][col], row, col, next_dir, get_streak(streak, prev_dir, next_dir), set(history)])
+                heapq.heappush(queue, ([curr_cost + grid[row][col], row, col, next_dir, get_streak(streak, prev_dir, next_dir)]))
     
-    return best
+    return -1
 
 
 def get_lowest_cost_path() -> int:
