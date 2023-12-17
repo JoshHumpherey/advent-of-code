@@ -4,6 +4,7 @@ import time
 from typing import List
 from lib.parse import parse_integer_grid
 import heapq
+from copy import deepcopy
 from rich import print
 
 class Direction(Enum):
@@ -12,36 +13,18 @@ class Direction(Enum):
     WEST = [0, -1]
     EAST = [0, 1]
 
-VAL_MAP = {
-    0: Direction.NORTH,
-    1: Direction.EAST,
-    2: Direction.SOUTH,
-    3: Direction.WEST,
-}
-INV_MAP = {
-    Direction.NORTH: 0,
-    Direction.EAST: 1,
-    Direction.SOUTH: 2,
-    Direction.WEST: 3,
-}
-REV_MAP = {
-    Direction.NORTH: Direction.SOUTH,
-    Direction.SOUTH: Direction.NORTH,
-    Direction.EAST: Direction.WEST,
-    Direction.WEST: Direction.EAST,
-}
+    def __lt__(self, other):
+        return self.value < other.value
+
 DIR_MAP = {
     "NORTH": "^",
     "SOUTH": "v",
     "WEST": "<",
     "EAST": ">",
 }
-
 STREAK_LIM = 3
-DIRS = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
 
 def print_grid(grid: List[List[str]], history) -> None:
-    os.system("clear")
     for r in range(len(grid)):
         pretty = "[white]"
         for c in range(len(grid[0])):
@@ -52,7 +35,6 @@ def print_grid(grid: List[List[str]], history) -> None:
                     match = True
                     d = dir
                     break
-            
             if match:
                 pretty += f"[red]{DIR_MAP[dir.name]}[/red]"
             else:
@@ -67,39 +49,39 @@ def get_streak(streak: int, old: Direction, new: Direction) -> int:
         return streak + 1
     return 1
 
-def lowest_cost_path(grid: List[List[int]]) -> int:
-    distances = [[float('inf') for _ in range(len(grid[0]))] for _ in range(len(grid))]
-    distances[0][0] = 0
-    start_row, start_col = 0, 0
-    raw_start_dir = 0
-    start_streak = 0
-    priority_queue = [(distances[0][0], start_row, start_col, raw_start_dir, start_streak, [[0, 0, Direction.EAST]])]
+def get_next_dirs(current_dir: Direction):
+    if current_dir == Direction.NORTH:
+        return [Direction.WEST, Direction.NORTH, Direction.EAST]
+    elif current_dir == Direction.EAST:
+        return [Direction.NORTH, Direction.EAST, Direction.SOUTH]
+    elif current_dir == Direction.SOUTH:
+        return [Direction.WEST, Direction.SOUTH, Direction.EAST]
+    else:    
+        return [Direction.NORTH, Direction.WEST, Direction.SOUTH]
 
-    while priority_queue:
-        cost, r, c, raw_dir, streak, history = heapq.heappop(priority_queue)
-        prev = VAL_MAP[raw_dir]
-        if cost > distances[r][c]:
+def lowest_cost_path(grid: List[List[int]]) -> int:
+    queue = [(0, 0, 0, Direction.EAST, 0, set())]
+    best = float('inf')
+    while queue:
+        curr_cost, r, c, prev_dir, streak, history = queue.pop(0)
+        if r == len(grid)-1 and c == len(grid[0])-1:
+            if curr_cost < best:
+                best = curr_cost
+            continue
+        elif (r,c) in history:
             continue
 
-        for dir in DIRS:
-            new_r, new_c = r + dir.value[0], c + dir.value[1]
-            if new_r < 0 or new_c < 0 or new_r >= len(grid) or new_c >= len(grid[0]):
+        history.add((r,c))
+        for next_dir in get_next_dirs(current_dir=prev_dir):
+            row, col = r + next_dir.value[0], c + next_dir.value[1]
+            if row < 0 or col < 0 or row >= len(grid) or col >= len(grid[0]):
                 continue
-            elif cost + grid[new_r][new_c] > distances[new_r][new_c]:
+            elif prev_dir == next_dir and streak >= STREAK_LIM:
                 continue
-            # elif dir == prev and streak + 1 > STREAK_LIM:
-            #     continue
-            # elif REV_MAP[dir] == prev:
-            #     continue
             else:
-                new_history = history + [[new_r, new_c, dir]]
-                print_grid(grid, new_history)
-                distances[new_r][new_c] = cost + grid[new_r][new_c]
-                heapq.heappush(priority_queue, (distances[new_r][new_c], new_r, new_c, INV_MAP[dir], get_streak(streak, prev, dir), new_history))
-
-    for row in distances:
-        print(row)
-    return distances[-1][-1]
+                queue.append([curr_cost + grid[row][col], row, col, next_dir, get_streak(streak, prev_dir, next_dir), set(history)])
+    
+    return best
 
 
 def get_lowest_cost_path() -> int:
