@@ -59,4 +59,29 @@ def get_cubic_depth() -> int:
 
     return shoelace(coords)
 
+def get_hex_depth() -> int:
+    ins = get_instructions()
+    hex_map = {
+        0: Direction.R,
+        1: Direction.D,
+        2: Direction.L,
+        3: Direction.U,
+    }
+    r, c = 0, 0
+    coords = [[0,0]]
+    for i in ins:
+        mag, dir = int(i.hex[1:len(i.hex)-1], 16), hex_map[int(i.hex[len(i.hex)-1])]
+        if dir == Direction.U:
+            r -= mag
+        elif dir == Direction.D:
+            r += mag
+        elif dir == Direction.L:
+            c -= mag
+        else:
+            c += mag
+        coords.append([r,c])
+
+    return shoelace(coords)
+
 print(get_cubic_depth())
+print(get_hex_depth())
