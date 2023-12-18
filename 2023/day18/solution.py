@@ -20,79 +20,6 @@ class Instruction:
     def print(self):
         print(f"Dir: {self.dir.name}, Len: {self.len}, Hex: {self.hex}")
 
-class Cell:
-
-    def __init__(self, color: str = "", depth: int = 0):
-        self.color = color
-        self.depth = depth
-
-class Grid:
-
-    def __init__(self) -> None:
-        self.grid: List[List[Cell]] = [[Cell()]]
-        self.r = 0
-        self.c = 0
-    
-    def add_col(self):
-        for r in range(len(self.grid)):
-            self.grid[r].extend([Cell()])
-    
-    def add_row(self):
-        to_insert = [Cell() for _ in range(len(self.grid[0]))]
-        self.grid.append(to_insert)
-    
-    def print(self):
-        for r in range(len(self.grid)):
-            row = ""
-            for c in range(len(self.grid[0])):
-                if self.grid[r][c].depth == 0:
-                    row += "."
-                else:
-                    row += str(self.grid[r][c].depth)
-            print(row)
-        print()
-
-    def execute(self, ins: Instruction):
-        for _ in range(ins.len):
-            self.r, self.c = self.r + ins.dir.value[0][0], self.c + ins.dir.value[0][1]
-            while self.r >= len(self.grid):
-                self.add_row()
-            while self.c >= len(self.grid[0]):
-                self.add_col()
-
-            self.grid[self.r][self.c].depth += 1
-            self.grid[self.r][self.c].color = ins.hex
-
-    def flood(self, r: int, c: int, target: int, val: int) -> None:
-        if r < 0 or c < 0 or r >= len(self.grid) or c >= len(self.grid[0]) or self.grid[r][c].depth != target:
-            return
-        self.grid[r][c].depth = val
-        self.flood(r+1, c, target, val)
-        self.flood(r-1, c, target, val)
-        self.flood(r, c+1, target, val)
-        self.flood(r, c-1, target, val)
-
-    def fill_enclosed(self) -> int:
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                if (r == 0 or c == 0 or r == len(self.grid)-1 or c == len(self.grid[0])-1) and self.grid[r][c].depth == 0:
-                    self.flood(r, c, 0, -1)
-
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                if self.grid[r][c].depth == 0:
-                    self.grid[r][c].depth = 1
-                elif self.grid[r][c].depth == -1:
-                    self.grid[r][c].depth = 0
-
-        area = 0
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                if self.grid[r][c].depth >= 1:
-                    area += 1
-
-        return area
-
 def get_instructions() -> List[Instruction]:
     data = parse_strings("2023/day18/input.txt")
     ins = []
@@ -100,27 +27,36 @@ def get_instructions() -> List[Instruction]:
         ins.append(Instruction(raw_ins=d))
     return ins
 
+def shoelace(points):
+    if points[0] != points[-1]:
+        points.append(points[0])
+
+    area = 0
+    perim = 0
+    for i in range(1, len(points)):
+        x1, y1 = points[i-1]
+        x2, y2 = points[i]
+        area += (x1 * y2 - x2 * y1)
+        perim += abs(x2 - x1) + abs(y2 - y1)
+
+    area = int(abs(area))
+    return ((area + perim) // 2) + 1
+
 def get_cubic_depth() -> int:
     ins = get_instructions()
-    grid = Grid()
-
+    r, c = 0, 0
+    coords = [[0,0]]
     for i in ins:
-        if i.dir == Direction.L:
-            for _ in range(i.len):
-                grid.add_col()
-                grid.c += 1
-        elif i.dir == Direction.U:
-            for _ in range(i.len):
-                grid.add_row()
-                grid.r += 1
+        if i.dir == Direction.U:
+            r -= i.len
+        elif i.dir == Direction.D:
+            r += i.len
+        elif i.dir == Direction.L:
+            c -= i.len
+        else:
+            c += i.len
+        coords.append([r,c])
 
-    for i in ins:
-        grid.execute(ins=i)
-    grid.add_col()
-    grid.add_row()
+    return shoelace(coords)
 
-    res = grid.fill_enclosed()
-    return res
-
-sys.setrecursionlimit(1_000_000_000)
 print(get_cubic_depth())
