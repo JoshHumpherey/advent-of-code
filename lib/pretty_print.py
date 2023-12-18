@@ -1,4 +1,6 @@
-from typing import Any, List
+import os
+import time
+from typing import Any, List, Tuple
 import sys
 import numpy as np
 
@@ -49,3 +51,23 @@ def print_bounded_grid(grid: List[List[str]], interesting: set, placeholder: str
                 pretty += placeholder
         print(pretty)
     
+def animate_grid(grid: List[List[any]], targets: List[Tuple[int, int]], marker: str = "@", delay: float = 0.1, clear: bool = True) -> None:
+    """
+    Animates a grid and overlays targets for the changing animation
+    Example:
+    . X .
+    X . .
+    """
+    if clear:
+        os.system("clear")
+    
+    for r in range(len(grid)):
+        row = ""
+        for c in range(len(grid[0])):
+            if [r,c] in targets:
+                row += marker
+            else:
+                row += str(grid[r][c])
+        print(row)
+    print()
+    time.sleep(delay)
