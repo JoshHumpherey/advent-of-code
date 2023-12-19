@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple
 from lib.parse import parse_string_groups
 from collections import defaultdict
 from math import prod
+from copy import deepcopy
 
 class Condition:
 
@@ -63,14 +64,8 @@ class Range:
     def span(self) -> int:
         return self.max - self.min + 1
 
-def print_ranges(ranges: Dict[str, Range]) -> None:
-    for key, range in ranges.items():
-        print(f"{key}: {range.min}-{range.max}")
-    print()
-
 def traverse(graph: Dict[str, List[Condition]], inputs: Dict[str, int], key: str, ranges: Dict[str, Range]) -> int:
     if key == "A":
-        print_ranges(ranges)
         return prod([r.span() for r in ranges.values()])
     elif key == "R":
         return 0
@@ -86,7 +81,6 @@ def traverse(graph: Dict[str, List[Condition]], inputs: Dict[str, int], key: str
         if not condition.branching:
             if condition.to in {"R","A"}:
                 if condition.to == "A":
-                    print_ranges(ranges)
                     return prod([r.span() for r in ranges.values()])
                 else:
                     return 0
@@ -111,6 +105,37 @@ def traverse(graph: Dict[str, List[Condition]], inputs: Dict[str, int], key: str
 
     raise Exception(f"Unable to process key {key}")
 
+range_map = {
+    "x":0,
+    "m":1,
+    "a":2,
+    "s":3,
+}
+
+def recurse(graph: Dict[str, List[Condition]], key: str, ranges: List[List[int]]) -> int:
+    if key == "A":
+        return prod([x[1]-x[0]+1 for x in ranges])
+    elif key == "R":
+        return 0
+    
+    res = 0
+    for c in graph[key]:
+        if c.op == ">":
+            new_ranges = deepcopy(ranges)
+            idx = range_map[c.var]
+            new_ranges[idx][0] = c.lim + 1
+            res += recurse(graph, c.to, new_ranges)
+            ranges[idx][1] = c.lim
+        elif c.op == "<":
+            new_ranges = deepcopy(ranges)
+            idx = range_map[c.var]
+            new_ranges[idx][1] = c.lim - 1
+            res += recurse(graph, c.to, new_ranges)
+            ranges[idx][0] = c.lim
+        else:
+            res += recurse(graph, c.to, ranges)
+
+    return res
 
 def get_working_parts() -> int:
     raw_instructions, raw_inputs = parse_string_groups("2023/day19/input.txt")
@@ -131,21 +156,10 @@ def get_working_parts() -> int:
     return res
 
 def get_working_ranges() -> int:
-    raw_instructions, raw_inputs = parse_string_groups("2023/day19/input.txt")
+    raw_instructions, _ = parse_string_groups("2023/day19/input.txt")
     graph = build_graph(raw_instructions)
-    inputs = build_inputs(raw_inputs)
-    res = 0
+    ranges = [[1, 4000] for _ in range(4)]
+    return recurse(graph, "in", ranges)
 
-    for i in inputs:
-        ranges = {
-            "x": Range(1, 4000),
-            "m": Range(1, 4000),
-            "a": Range(1, 4000),
-            "s": Range(1, 4000),
-        }
-        res += traverse(graph, i, "in", ranges)
-
-    return res
-
+print(get_working_parts())
 print(get_working_ranges())
-assert 167409079868000 == get_working_ranges()
