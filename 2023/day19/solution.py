@@ -1,7 +1,8 @@
 import re
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from lib.parse import parse_string_groups
 from collections import defaultdict
+from math import prod
 
 class Condition:
 
@@ -53,41 +54,98 @@ def build_inputs(raw_inputs: List[str]) -> List[Dict[str, int]]:
 
     return inputs
 
-def traverse(graph: Dict[str, List[Condition]], inputs: Dict[str, int], key: str) -> bool:
+class Range:
+
+    def __init__(self, min: int, max: int):
+        self.min = min
+        self.max = max
+    
+    def span(self) -> int:
+        return self.max - self.min + 1
+
+def print_ranges(ranges: Dict[str, Range]) -> None:
+    for key, range in ranges.items():
+        print(f"{key}: {range.min}-{range.max}")
+    print()
+
+def traverse(graph: Dict[str, List[Condition]], inputs: Dict[str, int], key: str, ranges: Dict[str, Range]) -> int:
     if key == "A":
-        return True
+        print_ranges(ranges)
+        return prod([r.span() for r in ranges.values()])
     elif key == "R":
-        return False
+        return 0
     elif key not in graph:
         raise Exception(f"Can't find key {key}")
     
+    restrict_range = True
+    default_cond = graph[key][-1]
+    if default_cond.to == "A":
+        restrict_range = False
+
     for condition in graph[key]:
         if not condition.branching:
             if condition.to in {"R","A"}:
-                print(f"Final condition met: {condition.to}")
-                return condition.to == "A"
+                if condition.to == "A":
+                    print_ranges(ranges)
+                    return prod([r.span() for r in ranges.values()])
+                else:
+                    return 0
             else:
-                print(f"Going to next key: {condition.to}")
-                return traverse(graph, inputs, condition.to)
-        elif condition.op == ">" and inputs[condition.var] > condition.lim:
-            print(f"{inputs[condition.var]}{condition.op}{condition.lim} -> {condition.to}")
-            return traverse(graph, inputs, condition.to)
-        elif condition.op == "<" and inputs[condition.var] < condition.lim:
-            print(f"{inputs[condition.var]}{condition.op}{condition.lim} -> {condition.to}")
-            return traverse(graph, inputs, condition.to)
-    
+                return traverse(graph, inputs, condition.to, ranges)
+        elif condition.op == ">":
+            if inputs[condition.var] > condition.lim:
+                if restrict_range:
+                    ranges[condition.var].min = condition.lim + 1
+                return traverse(graph, inputs, condition.to, ranges)
+            else:
+                if restrict_range:
+                    ranges[condition.var].max = condition.lim
+        elif condition.op == "<":
+            if inputs[condition.var] < condition.lim:
+                if restrict_range:
+                    ranges[condition.var].max = condition.lim - 1
+                return traverse(graph, inputs, condition.to, ranges)
+            else:
+                if restrict_range:
+                    ranges[condition.var].min = condition.lim
+
     raise Exception(f"Unable to process key {key}")
 
 
-def example() -> None:
+def get_working_parts() -> int:
     raw_instructions, raw_inputs = parse_string_groups("2023/day19/input.txt")
     graph = build_graph(raw_instructions)
     inputs = build_inputs(raw_inputs)
     res = 0
+
     for i in inputs:
-        if traverse(graph, i, "in"):
+        ranges = {
+            "x": Range(1, 4000),
+            "m": Range(1, 4000),
+            "a": Range(1, 4000),
+            "s": Range(1, 4000),
+        }
+        if traverse(graph, i, "in", ranges):
             res += sum(i.values())
     
     return res
-    
-print(example())
+
+def get_working_ranges() -> int:
+    raw_instructions, raw_inputs = parse_string_groups("2023/day19/input.txt")
+    graph = build_graph(raw_instructions)
+    inputs = build_inputs(raw_inputs)
+    res = 0
+
+    for i in inputs:
+        ranges = {
+            "x": Range(1, 4000),
+            "m": Range(1, 4000),
+            "a": Range(1, 4000),
+            "s": Range(1, 4000),
+        }
+        res += traverse(graph, i, "in", ranges)
+
+    return res
+
+print(get_working_ranges())
+assert 167409079868000 == get_working_ranges()
