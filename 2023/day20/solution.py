@@ -1,9 +1,12 @@
 from typing import Dict, List
 from lib.parse import parse_strings
+from math import lcm
 
 FLIP_FLOP = "%"
 CONJUCTION = "&"
 BROADCASTER = "broadcaster"
+OUTPUT = "rx"
+RX_CONJ = "kz"
 
 class Pulse:
 
@@ -66,8 +69,17 @@ class Circuit:
         self.component_graph = component_graph
         self.low = 0
         self.high = 0
+        self.final_conj = {}
+        for source in self.component_graph[RX_CONJ].sources:
+            self.final_conj[source] = 0
 
-    def press_button(self) -> None:
+    def conjunction_criteria_met(self) -> bool:
+        for val in self.final_conj.values():
+            if val == 0:
+                return False
+        return True
+    
+    def press_button(self, count: int) -> None:
         self.queue = [Pulse(signal=0, sender="button", destination="broadcaster")]
         while self.queue:
             pulse = self.queue.pop(0)
@@ -78,9 +90,13 @@ class Circuit:
             
             if pulse.destination not in self.component_graph:
                 continue
+            elif pulse.destination == RX_CONJ:
+                if pulse.signal == 1 and self.final_conj[pulse.sender] == 0:
+                    self.final_conj[pulse.sender] = count
 
             new_pulses = self.component_graph[pulse.destination].process(pulse=pulse)
             self.queue.extend(new_pulses)
+
         
         return
 
@@ -117,9 +133,19 @@ def create_circuit() -> Circuit:
 
 def simulate_cycles() -> int:
     circuit = create_circuit()
-    for _ in range(1_000):
-        circuit.press_button()
+    for i in range(1_000):
+        circuit.press_button(i)
     
     return circuit.low * circuit.high
+
+def find_final_cycle() -> int:
+    circuit = create_circuit()
+    i = 1
+    while not circuit.conjunction_criteria_met():
+        circuit.press_button(i)
+        i += 1
     
+    return lcm(*circuit.final_conj.values())
+
 print(simulate_cycles())
+print(find_final_cycle())
