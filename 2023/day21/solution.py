@@ -1,3 +1,4 @@
+import time
 from typing import List
 from lib.parse import parse_string_grid
 
@@ -37,4 +38,39 @@ def get_possibilities(steps: int) -> int:
     
     return len(queue)
 
+def get_steps_to_reach_target(target: int) -> int:
+    grid = parse_string_grid("2023/day21/input.txt")
+    queue = set()
+    for r in range(len(grid)):
+        for c in range(len(grid[0])):
+            if grid[r][c] == "S":
+                queue.add((r,c))
+                break
+    cycles = 0
+
+    while True:
+        cycles += 1
+        if cycles % 100 == 0:
+            print(f"Cycle: {cycles} - queue: {len(queue)}")
+        next_queue = set()
+        for row, col in queue:
+            for x,y in DIRS:
+                r, c = row+x, col+y
+                if grid[r % len(grid)][c % len(grid[0])] not in EMPTY:
+                    continue
+                else:
+                    next_queue.add((r,c))
+        if len(next_queue) == target:
+            return cycles
+        elif len(next_queue) > target:
+            print_grid(grid, next_queue)
+            raise Exception(f"Overshot target: {len(next_queue)} in {cycles} cycles")
+        queue = next_queue
+
 print(get_possibilities(steps=64))
+# assert get_steps_to_reach_target(target=16) == 6
+# assert get_steps_to_reach_target(target=50) == 10
+# assert get_steps_to_reach_target(target=6536) == 100
+# assert get_steps_to_reach_target(target=167004) == 500
+# assert get_steps_to_reach_target(target=668697) == 1000
+print(get_steps_to_reach_target(target=26501365))
