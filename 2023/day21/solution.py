@@ -1,6 +1,6 @@
-import time
 from typing import List
 from lib.parse import parse_string_grid
+import numpy as np
 
 DIRS = [[-1,0], [1,0], [0,-1], [0,1]]
 EMPTY = {".", "S"}
@@ -38,7 +38,7 @@ def get_possibilities(steps: int) -> int:
     
     return len(queue)
 
-def get_steps_to_reach_target(target: int) -> int:
+def get_infinite_possibilities(steps: int) -> int:
     grid = parse_string_grid("2023/day21/input.txt")
     queue = set()
     for r in range(len(grid)):
@@ -46,12 +46,8 @@ def get_steps_to_reach_target(target: int) -> int:
             if grid[r][c] == "S":
                 queue.add((r,c))
                 break
-    cycles = 0
 
-    while True:
-        cycles += 1
-        if cycles % 100 == 0:
-            print(f"Cycle: {cycles} - queue: {len(queue)}")
+    for _ in range(steps):
         next_queue = set()
         for row, col in queue:
             for x,y in DIRS:
@@ -60,17 +56,22 @@ def get_steps_to_reach_target(target: int) -> int:
                     continue
                 else:
                     next_queue.add((r,c))
-        if len(next_queue) == target:
-            return cycles
-        elif len(next_queue) > target:
-            print_grid(grid, next_queue)
-            raise Exception(f"Overshot target: {len(next_queue)} in {cycles} cycles")
         queue = next_queue
 
-print(get_possibilities(steps=64))
-# assert get_steps_to_reach_target(target=16) == 6
-# assert get_steps_to_reach_target(target=50) == 10
-# assert get_steps_to_reach_target(target=6536) == 100
-# assert get_steps_to_reach_target(target=167004) == 500
-# assert get_steps_to_reach_target(target=668697) == 1000
-print(get_steps_to_reach_target(target=26501365))
+    return len(queue)
+
+def compute(x: int) -> int:
+    def poly(x, a, b, c):
+        return a * x**2 + b * x + c
+
+    x_data = np.array([65, 196, 327])
+    y_data = np.array([get_infinite_possibilities(65), get_infinite_possibilities(196), get_infinite_possibilities(327)])
+
+    # Fit a quadratic polynomial (ax^2 + bx + c) to the data
+    coefficients = np.polyfit(x_data, y_data, 2)
+    a, b, c = coefficients
+    return round(poly(x, a, b, c))
+
+# print(get_possibilities(steps=64))
+# print(get_infinite_possibilities(steps=500))
+print(compute(x=1000))
