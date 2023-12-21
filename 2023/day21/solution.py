@@ -47,7 +47,9 @@ def get_infinite_possibilities(steps: int) -> int:
                 queue.add((r,c))
                 break
 
+    res = []
     for _ in range(steps):
+        res.append(len(queue))
         next_queue = set()
         for row, col in queue:
             for x,y in DIRS:
@@ -58,20 +60,16 @@ def get_infinite_possibilities(steps: int) -> int:
                     next_queue.add((r,c))
         queue = next_queue
 
-    return len(queue)
+    return res[len(res)-2]
 
-def compute(x: int) -> int:
-    def poly(x, a, b, c):
-        return a * x**2 + b * x + c
+def compute_poly(x: int) -> int:
+    grid = parse_string_grid("2023/day21/input.txt")
+    # polynomials were computed manually by hand via wolframalpha
+    a = 3703
+    b = 32712
+    c = 90559
+    n = x // len(grid)
+    return a+n*(b-a+(n-1)*(c-b-b+a)//2)
 
-    x_data = np.array([65, 196, 327])
-    y_data = np.array([get_infinite_possibilities(65), get_infinite_possibilities(196), get_infinite_possibilities(327)])
-
-    # Fit a quadratic polynomial (ax^2 + bx + c) to the data
-    coefficients = np.polyfit(x_data, y_data, 2)
-    a, b, c = coefficients
-    return round(poly(x, a, b, c))
-
-# print(get_possibilities(steps=64))
-# print(get_infinite_possibilities(steps=500))
-print(compute(x=1000))
+print(get_possibilities(steps=64))
+print(compute_poly(x=26501365))
