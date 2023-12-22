@@ -59,6 +59,17 @@ def can_remove(target: str, bricks: Dict[str, set]) -> bool:
     settled_test_bricks = settle_tower(bricks=test_bricks)
     return settled_test_bricks == test_bricks
 
+def amount_unsettled(target: str, bricks: Dict[str, set]) -> int:
+    test_bricks = deepcopy(bricks)
+    del test_bricks[target]
+    settled_test_bricks = settle_tower(bricks=test_bricks)
+    res = 0
+    for key, b in settled_test_bricks.items():
+        if bricks[key] != settled_test_bricks[key]:
+            res += 1
+    
+    return res
+
 def find_supports() -> int:
     bricks = create_bricks()
     settled_bricks = settle_tower(bricks=bricks)
@@ -71,4 +82,16 @@ def find_supports() -> int:
     
     return count
 
+def total_unsettled() -> int:
+    bricks = create_bricks()
+    settled_bricks = settle_tower(bricks=bricks)
+    count = 0
+
+    for label in settled_bricks.keys():
+        temp = amount_unsettled(target=label, bricks=settled_bricks)
+        print(f"Removing {label} caused {temp} bricks to fall")
+    
+    return count
+
 print(find_supports())
+print(total_unsettled())
