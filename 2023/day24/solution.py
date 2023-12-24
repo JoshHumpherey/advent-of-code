@@ -1,6 +1,7 @@
 from typing import List
 from lib.parse import parse_strings
 import numpy as np
+import z3
 
 class Hailstone:
 
@@ -39,9 +40,30 @@ def collisions_within_bounds(hailstones: List[Hailstone], low_bound: int, high_b
                     collisions += 1
     return collisions
 
+def collide_with_all(hailstones: List[Hailstone]) -> int:
+    s = z3.Solver()
+    x, y, z, vx, vy, vz = [z3.Int(var) for var in ["x", "y", "z", "vx", "vy", "vz"]]
+    for i in range(0, 3):
+        h = hailstones[i]
+        t = z3.Int(f"t{i}")
+        s.add(t >= 0)
+        s.add(x + vx * t == h.x + h.vx * t)
+        s.add(y + vy * t == h.y + h.vy * t)
+        s.add(z + vz * t == h.z + h.vz * t)
+    if s.check() == z3.sat:
+        m = s.model()
+        print(m)
+        return int(m[x].as_long() + m[y].as_long() + m[z].as_long())
+    else:
+        return -1
 
 def find_collisions() -> int:
     hailstones = create_hailstones()
     return collisions_within_bounds(hailstones, 200000000000000, 400000000000000)
 
+def find_all_collisions() -> int:
+    hailstones = create_hailstones()
+    return collide_with_all(hailstones)
+
 print(find_collisions())
+print(find_all_collisions())
