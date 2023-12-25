@@ -1,8 +1,10 @@
 import os
 import time
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
 
 def print_grid(grid: List[List[Any]]) -> None:
     """
@@ -71,3 +73,16 @@ def animate_grid(grid: List[List[any]], targets: List[Tuple[int, int]], marker: 
         print(row)
     print()
     time.sleep(delay)
+
+def print_graph(graph: Dict) -> None:
+    """
+    Prints a graph using networkx
+    """
+    G = nx.Graph()
+    for node, neighbors in graph.items():
+        G.add_node(node)
+        for neighbor in neighbors:
+            G.add_edge(node, neighbor)
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=700, node_color='skyblue', font_size=8)
+    plt.show()
