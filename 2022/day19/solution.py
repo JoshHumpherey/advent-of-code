@@ -44,6 +44,7 @@ class Blueprint:
         for material_type, amt in self.costs[robot_type].items():
             if resources[material_type] < amt:
                 return False
+        
         return True
 
 def print_state(machines: Dict, resources: Dict) -> None:
@@ -71,16 +72,28 @@ def buy_machine(b: Blueprint, machine_type: Material, machines: Dict, resources:
     new_resources = gather_resources(new_resources, machines)
     return (new_machines, new_resources)
 
+def has_geode_production_capacity(machines: Dict, max_geode_machines: int) -> bool:
+    return machines[Material.GEODE] >= max_geode_machines
+
+def should_prune(resources: Dict, machines: Dict, max_geode_machines: int) -> bool:
+    if not has_geode_production_capacity(machines, max_geode_machines):
+        return True
+    return False
+
 def simulate_blueprint(b: Blueprint, rounds: int) -> int:
     resources, machines = defaultdict(int), defaultdict(int)
     machines[Material.ORE] = 1
     
     count = 0
     queue = [(resources, machines)]
+    max_geode_machines = 0
     while queue and count < rounds:
-        print(f"Queue={len(queue)}, Round: {count}")
+        print(f"Queue={len(queue)}, Round: {count}, Max Geode Machines: {max_geode_machines}")
         next_queue = []
         for r, m in queue:
+            if should_prune(r, m, max_geode_machines):
+                continue
+            max_geode_machines = max(max_geode_machines, machines[Material.GEODE])
             if b.can_afford(Material.ORE, r):
                 # print(f"Can afford ore machine")
                 next_queue.append(buy_machine(b, Material.ORE, m, r))
@@ -113,7 +126,7 @@ def get_best_blueprint() -> None:
     
     best = 0
     for b in blueprints:
-        temp = simulate_blueprint(b=b, rounds=4)
+        temp = simulate_blueprint(b=b, rounds=24)
         best = max(best, temp)
 
     return best
