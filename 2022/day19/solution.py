@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Dict
 from lib.parse import parse_strings
 from collections import defaultdict
-from copy import deepcopy
+import concurrent.futures
 
 class Material(Enum):
     ORE = 1
@@ -39,17 +39,24 @@ class Blueprint:
             Material.OBSIDIAN: get_costs(raw_costs[2]),
             Material.GEODE: get_costs(raw_costs[3]),
         }
+        self.limits = defaultdict(int)
+        for material in self.costs.keys():
+            for key, val in self.costs[material].items():
+                self.limits[key] += val
+        self.limits[Material.GEODE] = float('inf')
 
-    def can_afford(self, robot_type: Material, resources: Dict) -> bool:
+    def can_afford(self, robot_type: Material, resources: Dict, machines: Dict) -> bool:
         for material_type, amt in self.costs[robot_type].items():
             if resources[material_type] < amt:
                 return False
-        
+        if self.limits[robot_type] <= machines[robot_type]:
+            return False
         return True
 
-def print_state(machines: Dict, resources: Dict) -> None:
+def print_state(b: Blueprint, machines: Dict, resources: Dict) -> None:
     print(f"Machines: ore:{machines[Material.ORE]},clay={machines[Material.CLAY]},obisidian={machines[Material.OBSIDIAN]},geode={machines[Material.GEODE]}")
     print(f"Resources: ore:{resources[Material.ORE]},clay={resources[Material.CLAY]},obisidian={resources[Material.OBSIDIAN]},geode={resources[Material.GEODE]}")
+    print(f"Limits: ore:{b.limits[Material.ORE]},clay={b.limits[Material.CLAY]},obisidian={b.limits[Material.OBSIDIAN]},geode={b.limits[Material.GEODE]}")
     print()
 
 def gather_resources(resources: Dict, machines: Dict) -> Dict:
@@ -68,15 +75,36 @@ def buy_machine(b: Blueprint, machine_type: Material, machines: Dict, resources:
     new_machines[machine_type] += 1
     for key, val in b.costs[machine_type].items():
         new_resources[key] -= val
-        
-    new_resources = gather_resources(new_resources, machines)
-    return (new_machines, new_resources)
+    
+    new_resources = gather_resources(resources=new_resources, machines=machines)
+    return (new_resources, new_machines)
 
 def has_geode_production_capacity(machines: Dict, max_geode_machines: int) -> bool:
     return machines[Material.GEODE] >= max_geode_machines
 
-def should_prune(resources: Dict, machines: Dict, max_geode_machines: int) -> bool:
-    if not has_geode_production_capacity(machines, max_geode_machines):
+def could_catch_up(machines: Dict, resources: Dict, best_geodes: int, remaining_rounds) -> bool:
+    m = machines[Material.GEODE]
+    g = resources[Material.GEODE]
+    for _ in range(remaining_rounds):
+        g += m
+        m += 1
+    
+    return g >= best_geodes
+
+def too_many_machines(b: Blueprint, machines: Dict) -> bool:
+    for key, val in machines.items():
+        if key == Material.GEODE:
+            continue
+        elif b.limits[key] < val - 1:
+            return True
+    return False
+
+def should_prune(b: Blueprint, resources: Dict, machines: Dict, max_geode_machines: int, remaining_rounds: int, max_geodes: int) -> bool:
+    if not has_geode_production_capacity(machines=machines, max_geode_machines=max_geode_machines):
+        return True
+    elif not could_catch_up(machines=machines, resources=resources, best_geodes=max_geodes, remaining_rounds=remaining_rounds):
+        return True
+    elif too_many_machines(b=b, machines=machines):
         return True
     return False
 
@@ -87,26 +115,27 @@ def simulate_blueprint(b: Blueprint, rounds: int) -> int:
     count = 0
     queue = [(resources, machines)]
     max_geode_machines = 0
+    max_geodes = 0
+
     while queue and count < rounds:
-        print(f"Queue={len(queue)}, Round: {count}, Max Geode Machines: {max_geode_machines}")
+        if count >= 21:
+            print(f"Blueprint={b.id}, Queue={len(queue)}, Round: {count+1}")
         next_queue = []
         for r, m in queue:
-            if should_prune(r, m, max_geode_machines):
+            if should_prune(b, r, m, max_geode_machines, rounds-count+1, max_geodes):
                 continue
             max_geode_machines = max(max_geode_machines, machines[Material.GEODE])
-            if b.can_afford(Material.ORE, r):
-                # print(f"Can afford ore machine")
-                next_queue.append(buy_machine(b, Material.ORE, m, r))
-            if b.can_afford(Material.CLAY, r):
-                # print(f"Can afford clay machine")
-                next_queue.append(buy_machine(b, Material.CLAY, m, r))
-            if b.can_afford(Material.OBSIDIAN, r):
-                # print(f"Can afford obsidian machine")
-                next_queue.append(buy_machine(b, Material.OBSIDIAN, m, r))
-            if b.can_afford(Material.GEODE, r):
-                # print(f"Can afford geode machine")
-                next_queue.append(buy_machine(b, Material.GEODE, m, r))
-            new_r = gather_resources(r, m)
+            max_geodes = max(max_geodes, r[Material.GEODE])
+            if b.can_afford(Material.GEODE, r, m):
+                next_queue.append(buy_machine(b=b, machine_type=Material.GEODE, machines=m, resources=r))
+            if b.can_afford(Material.OBSIDIAN, r, m):
+                next_queue.append(buy_machine(b=b, machine_type=Material.OBSIDIAN, machines=m, resources=r))
+            if b.can_afford(Material.CLAY, r, m):
+                next_queue.append(buy_machine(b=b, machine_type=Material.CLAY, machines=m, resources=r))
+            if b.can_afford(Material.ORE, r, m):
+                next_queue.append(buy_machine(b=b, machine_type=Material.ORE, machines=m, resources=r))
+            
+            new_r = gather_resources(resources=r, machines=m)
             next_queue.append((new_r, m))
 
         queue = next_queue
@@ -114,21 +143,23 @@ def simulate_blueprint(b: Blueprint, rounds: int) -> int:
     
     best = 0
     for r, m in queue:
-        print_state(m, r)
-        best = max(best, int(b.id)*m[Material.GEODE])
+        quality = int(b.id)*r[Material.GEODE]
+        if quality > best:
+            print(f"New Best Configuration: {b.id} - {r[Material.GEODE]}")
+            # print_state(b=b, machines=m, resources=r)
+            best = quality
     return best
 
-def get_best_blueprint() -> None:
-    groups = parse_strings("2022/day19/input.txt")
-    blueprints = []
-    for g in groups:
-        blueprints.append(Blueprint(g))
+def get_best_blueprint(rounds: int, file: str) -> int:
+    groups = parse_strings(file)
+    blueprints = [Blueprint(g) for g in groups]
+    results = []
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(simulate_blueprint, b=b, rounds=rounds) for b in blueprints]
+        results = [future.result() for future in concurrent.futures.as_completed(futures)]
     
-    best = 0
-    for b in blueprints:
-        temp = simulate_blueprint(b=b, rounds=24)
-        best = max(best, temp)
+    return sum(results)
 
-    return best
-
-print(get_best_blueprint())
+print(get_best_blueprint(rounds=24, file="2022/day19/sample.txt"))
+print(get_best_blueprint(rounds=24, file="2022/day19/input.txt"))
