@@ -1,5 +1,5 @@
-import java.io.File
 import java.io.BufferedReader
+import java.io.File
 
 fun parseString(fileName: String): String {
     BufferedReader(File(fileName).bufferedReader()).use { reader ->
