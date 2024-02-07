@@ -8,3 +8,4 @@ aoc.egg-info/
 
 # Kotlin / Java Files
 *.jar
+*.idea
