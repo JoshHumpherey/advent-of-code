@@ -9,3 +9,6 @@ aoc.egg-info/
 # Kotlin / Java Files
 *.jar
 *.idea
+
+# Rust Files
+**/target/
