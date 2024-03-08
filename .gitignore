@@ -12,3 +12,6 @@ aoc.egg-info/
 
 # Rust Files
 **/target/
+
+# CPP Files
+solution
