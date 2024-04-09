@@ -27,28 +27,34 @@ public:
         // plot vertical lines if allowed
         if (c.start.first != c.end.first && c.start.second != c.end.second) {
             if (plotDiagonal) {
-                int dx = c.end.first - c.start.first;
-                int dy = c.end.second - c.start.second;
-                int d = 2 * dy - dx;
-                int y = c.start.second;
+                int slopeNumerator = (c.end.first - c.start.first);
+                int slopeDenominator = (c.end.second - c.start.second);
+                float slope = slopeNumerator / slopeDenominator;
+                pair<int, int> leftPair = c.end;
+                pair<int, int> rightPair = c.start;
+                if (c.start.second <= c.end.second) {
+                    leftPair = c.start;
+                    rightPair = c.end;
+                }
 
-                for (int x = c.start.first; x <= c.end.first; ++x) {
-                    auto key = make_pair(x, y);
+                int delta = -1;
+                if (slope >= 0) {
+                    delta = 1;
+                }
+
+                while (leftPair.first != rightPair.first && leftPair.second != rightPair.second) {
+                    auto key = leftPair;
                     if (cells.count(key) > 0) {
                         cells[key] += 1;
                     } else {
                         cells[key] = 1;
                     }
 
-                    if (d < 0) {
-                        d += 2 * dy;
-                    } else {
-                        d += 2 * (dy - dx);
-                        ++y;
-                    }
+                    leftPair.first += delta;
+                    leftPair.second += delta;
                 }
-                return;
             }
+            return;
         }
 
         // add all vertical lines
@@ -90,6 +96,27 @@ public:
             }
         }
         return intersections;
+    }
+
+    void Print() {
+        int maxBound = 0;
+        for (auto c : cells) {
+            int localBound = max(c.first.first, c.first.second);
+            maxBound = max(maxBound, localBound);
+        }
+
+        for (auto r = 0; r < maxBound + 1; r++) {
+            string line = "";
+            for (auto c = 0; c < maxBound + 1; c++) {
+                auto key = make_pair(r, c);
+                if (cells.count(key) > 0) {
+                    line += to_string(cells[key]);
+                } else {
+                    line += ".";
+                }
+            }
+            cout << line << endl;
+        }
     }
 };
 
@@ -141,7 +168,7 @@ vector<Coordinate> parseLines(const string& filePath) {
 }
 
 int main() {
-    vector<Coordinate> coordinates = parseLines("input.txt");
+    vector<Coordinate> coordinates = parseLines("text.txt");
     Board standardBoard;
     Board diagonalBoard;
 
@@ -152,4 +179,6 @@ int main() {
 
     cout << "Part 1: " + to_string(standardBoard.GetIntersectionCount()) << endl;
     cout << "Part 2: " + to_string(diagonalBoard.GetIntersectionCount()) << endl;
+
+    diagonalBoard.Print();
 }
