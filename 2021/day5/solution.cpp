@@ -23,10 +23,32 @@ class Board {
 private:
     map<pair<int, int>, int> cells;
 public:
-    void PlotLine(Coordinate c) {
-        // determine if this is a diagonal line and if so return without plotting
+    void PlotLine(Coordinate c, bool plotDiagonal) {
+        // plot vertical lines if allowed
         if (c.start.first != c.end.first && c.start.second != c.end.second) {
-            return;
+            if (plotDiagonal) {
+                int dx = c.end.first - c.start.first;
+                int dy = c.end.second - c.start.second;
+                int d = 2 * dy - dx;
+                int y = c.start.second;
+
+                for (int x = c.start.first; x <= c.end.first; ++x) {
+                    auto key = make_pair(x, y);
+                    if (cells.count(key) > 0) {
+                        cells[key] += 1;
+                    } else {
+                        cells[key] = 1;
+                    }
+
+                    if (d < 0) {
+                        d += 2 * dy;
+                    } else {
+                        d += 2 * (dy - dx);
+                        ++y;
+                    }
+                }
+                return;
+            }
         }
 
         // add all vertical lines
@@ -68,10 +90,6 @@ public:
             }
         }
         return intersections;
-    }
-
-    void Print() {
-
     }
 };
 
@@ -122,16 +140,16 @@ vector<Coordinate> parseLines(const string& filePath) {
     return result;
 }
 
-int plotLines(const vector<Coordinate>& coordinates, Board board) {
-    for (auto c : coordinates) {
-        board.PlotLine(c);
-    }
-    return board.GetIntersectionCount();
-}
-
 int main() {
     vector<Coordinate> coordinates = parseLines("input.txt");
-    Board board;
+    Board standardBoard;
+    Board diagonalBoard;
 
-    cout << "Part 1: " + to_string(plotLines(coordinates, board)) << endl;
+    for (auto c : coordinates) {
+        standardBoard.PlotLine(c, false);
+        diagonalBoard.PlotLine(c, true);
+    }
+
+    cout << "Part 1: " + to_string(standardBoard.GetIntersectionCount()) << endl;
+    cout << "Part 2: " + to_string(diagonalBoard.GetIntersectionCount()) << endl;
 }
