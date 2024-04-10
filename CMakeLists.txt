@@ -698,4 +698,5 @@ add_executable(advent_of_code
         setup.py
         setup.sh
         setup_rust.sh
-        2021/day5/solution.cpp)
+        2021/day5/solution.cpp
+        2021/day6/solution.cpp)
