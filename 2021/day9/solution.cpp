@@ -2,8 +2,11 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 
 using namespace std;
+
+const int PEAK = 9;
 
 vector<vector<int>> getHeightMap(const string& filePath) {
     ifstream inputFile(filePath);
@@ -45,21 +48,63 @@ bool isLowPoint(vector<vector<int>> heightMap, int r, int c) {
     return center < up && center < down && center < left && center < right;
 }
 
-int getRiskLevel(vector<vector<int>> heightMap) {
-    int riskLevel = 0;
+vector<pair<int,int>> getLowPoints(vector<vector<int>> heightMap) {
+    vector<pair<int,int>> lowPoints = {};
     for (auto r = 0; r < heightMap.size(); r++) {
         for (auto c = 0; c < heightMap[0].size(); c++) {
             if (isLowPoint(heightMap, r, c)) {
-                riskLevel += (heightMap[r][c] + 1);
+                lowPoints.emplace_back(r,c);
             }
         }
     }
+    return lowPoints;
+}
+
+int getRiskLevel(vector<pair<int,int>> lowPoints, vector<vector<int>> heightMap) {
+    int riskLevel = 0;
+    for (auto p : lowPoints) {
+        riskLevel += heightMap[p.first][p.second] + 1;
+    }
     return riskLevel;
+}
+
+int expand(vector<vector<int>>& heightMap, int lastVal, int r, int c) {
+    if (r < 0 || c < 0 || r >= heightMap.size() || c >= heightMap[0].size() || heightMap[r][c] == PEAK || heightMap[r][c] <= lastVal) {
+        return 0;
+    }
+    lastVal = heightMap[r][c];
+    heightMap[r][c] = PEAK;
+    int flooded = 1;
+    flooded += expand(heightMap, lastVal, r+1, c);
+    flooded += expand(heightMap, lastVal, r-1, c);
+    flooded += expand(heightMap, lastVal, r, c+1);
+    flooded += expand(heightMap, lastVal, r, c-1);
+    return flooded;
+}
+
+vector<int> getBasinSizes(vector<pair<int,int>> lowPoints, vector<vector<int>> heightMap) {
+    map<pair<int,int>,int> seen = {};
+    vector<int> basinSizes = {};
+
+    for (auto p : lowPoints) {
+        auto localSize = expand(heightMap, INT_MIN, p.first, p.second);
+        basinSizes.push_back(localSize);
+    }
+    sort(basinSizes.begin(), basinSizes.end());
+    return basinSizes;
+}
+
+int getTopLargestBasins(vector<pair<int,int>> lowPoints, vector<vector<int>> heightMap) {
+    auto basinSizes = getBasinSizes(lowPoints, heightMap);
+    auto endIdx = basinSizes.size()-1;
+    return basinSizes[endIdx] * basinSizes[endIdx-1] * basinSizes[endIdx-2];
 }
 
 
 int main() {
     auto heightMap = getHeightMap("input.txt");
+    auto lowPoints = getLowPoints(heightMap);
 
-    cout << "Part 1: " + to_string(getRiskLevel(heightMap)) << endl;
+    cout << "Part 1: " + to_string(getRiskLevel(lowPoints, heightMap)) << endl;
+    cout << "Part 2: " + to_string(getTopLargestBasins(lowPoints, heightMap)) << endl;
 }
