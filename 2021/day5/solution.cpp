@@ -27,19 +27,15 @@ public:
         // plot vertical lines if allowed
         if (c.start.first != c.end.first && c.start.second != c.end.second) {
             if (plotDiagonal) {
-                int slopeNumerator = (c.end.first - c.start.first);
-                int slopeDenominator = (c.end.second - c.start.second);
-                float slope = slopeNumerator / slopeDenominator;
                 pair<int, int> leftPair = c.end;
                 pair<int, int> rightPair = c.start;
                 if (c.start.second <= c.end.second) {
                     leftPair = c.start;
                     rightPair = c.end;
                 }
-
-                int delta = -1;
-                if (slope >= 0) {
-                    delta = 1;
+                int rise = 1;
+                if (rightPair.first <= leftPair.first) {
+                    rise = -1;
                 }
 
                 while (leftPair.first != rightPair.first && leftPair.second != rightPair.second) {
@@ -50,9 +46,10 @@ public:
                         cells[key] = 1;
                     }
 
-                    leftPair.first += delta;
-                    leftPair.second += delta;
+                    leftPair.first += rise;
+                    leftPair.second += 1;
                 }
+                cells[leftPair] += 1;
             }
             return;
         }
@@ -168,7 +165,7 @@ vector<Coordinate> parseLines(const string& filePath) {
 }
 
 int main() {
-    vector<Coordinate> coordinates = parseLines("text.txt");
+    vector<Coordinate> coordinates = parseLines("input.txt");
     Board standardBoard;
     Board diagonalBoard;
 
@@ -179,6 +176,4 @@ int main() {
 
     cout << "Part 1: " + to_string(standardBoard.GetIntersectionCount()) << endl;
     cout << "Part 2: " + to_string(diagonalBoard.GetIntersectionCount()) << endl;
-
-    diagonalBoard.Print();
 }
