@@ -707,4 +707,5 @@ add_executable(advent_of_code
         2021/day12/solution.cpp
         2021/day13/solution.cpp
         2021/day14/solution.cpp
+        2021/day15/solution.cpp
 )
