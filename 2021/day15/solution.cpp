@@ -7,6 +7,58 @@
 
 using namespace std;
 
+vector<int> getIncrementedVector(const vector<int>& vec) {
+    vector<int> incrementedVector = {};
+    for (const int& v : vec) {
+        auto val = v + 1;
+        if (val > 9) {
+            val = 1;
+        }
+        incrementedVector.push_back(val);
+    }
+    return incrementedVector;
+}
+
+vector<vector<int>> getExtendedGrid(const vector<vector<int>>& grid, int scaling) {
+    vector<vector<int>> extendedGrid = {};
+
+    // extend the grid to contain all the original rows but with extended columns
+    for (const auto & r : grid) {
+        vector<vector<int>> rows = {};
+        rows.push_back(r);
+        for (auto s = 0; s < scaling-1; s++) {
+            auto chunk = getIncrementedVector(rows[rows.size()-1]);
+            rows.push_back(chunk);
+        }
+
+        vector<int> extendedRow = {};
+        for (const auto& row : rows) {
+            for (auto val : row) {
+                extendedRow.push_back(val);
+            }
+        }
+        extendedGrid.push_back(extendedRow);
+    }
+
+    // extend the columns downward according to the pattern
+    vector<vector<vector<int>>> chunks = {};
+    chunks.push_back(extendedGrid);
+    for (auto s = 0; s < scaling-1; s++) {
+        vector<vector<int>> nextChunk = {};
+        for (const auto& chunk : chunks[chunks.size()-1]) {
+            nextChunk.push_back(getIncrementedVector(chunk));
+        }
+        chunks.push_back(nextChunk);
+    }
+    for (int i = 1; i < chunks.size(); i++) {
+        for (const auto& row : chunks[i]) {
+            extendedGrid.push_back(row);
+        }
+    }
+
+    return extendedGrid;
+}
+
 vector<vector<int>> getGrid(const string& filePath) {
     ifstream inputFile(filePath);
     vector<string> lines;
@@ -45,16 +97,18 @@ int lowestPathCost(vector<vector<int>> grid) {
     priority_queue<path> minHeap;
     minHeap.push(path{0, 0, 0});
     set<pair<int,int>> visited;
-
     while (!minHeap.empty()) {
         path p = minHeap.top();
         minHeap.pop();
         int totalCost = p.cost;
         int r = p.r;
         int c = p.c;
+
+        if (visited.count(make_pair(r,c)) > 0) {
+            continue;
+        }
         visited.insert(make_pair(r,c));
 
-        // cout << "evaluating r=" + to_string(r) + ", c=" + to_string(c) + ", cost=" + to_string(totalCost) << endl;
         if (r != 0 || c != 0) {
             totalCost += grid[r][c];
         }
@@ -80,7 +134,9 @@ int lowestPathCost(vector<vector<int>> grid) {
 
 
 int main() {
-    vector<vector<int>> grid = getGrid("input.txt");
-
+    auto grid = getGrid("input.txt");
+    auto extendedGrid = getExtendedGrid(grid, 5);
+    
     cout << "Part 1: " + to_string(lowestPathCost(grid)) << endl;
+    cout << "Part 2: " + to_string(lowestPathCost(extendedGrid)) << endl;
 }
