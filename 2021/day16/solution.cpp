@@ -6,6 +6,8 @@
 
 using namespace std;
 
+const bool DEBUG = false;
+
 const int HEADER_SIZE = 6;
 const int LITERAL_ID = 4;
 const int NESTED_PACKET_HEADER_SIZE = 7;
@@ -35,8 +37,8 @@ string hexCharToBinary(char hex) {
     }
 }
 
-int binaryStringToInt(const string& binaryString) {
-    return stoi(binaryString, nullptr, 2);
+long long binaryStringToLongLong(const string& binaryString) {
+    return stol(binaryString, nullptr, 2);
 }
 
 string getBinaryInput(const string& filePath) {
@@ -65,13 +67,61 @@ long long getVectorSum(const vector<long long>& v) {
     return res;
 }
 
+long long getVectorProduct(const vector<long long>& v) {
+    long long res = 1;
+    for (const auto& val : v) {
+        res *= val;
+    }
+    return res;
+}
+
+long long getVectorMin(const vector<long long>& v)  {
+    long long res = LLONG_MAX;
+    for (const auto& val : v) {
+        res = min(res, val);
+    }
+    return res;
+}
+
+long long getVectorMax(const vector<long long>& v)  {
+    long long res = LLONG_MIN;
+    for (const auto& val : v) {
+        res = max(res, val);
+    }
+    return res;
+}
+
+long long getGreaterThan(const vector<long long>& v) {
+    if (v[0] > v[1]) {
+        return 1ll;
+    }
+    return 0ll;
+}
+
+long long getLessThan(const vector<long long>& v) {
+    if (v[0] < v[1]) {
+        return 1ll;
+    }
+    return 0ll;
+}
+
+long long getEqualTo(const vector<long long>& v) {
+    if (v[0] == v[1]) {
+        return 1ll;
+    }
+    return 0ll;
+}
+
+
 long long parsePacket(const string& binaryString, long long& position, bool returnVersionSum) {
-    cout << binaryString.substr(position, binaryString.size()-position) << endl;
+    if (DEBUG)
+        cout << binaryString.substr(position, binaryString.size()-position) << endl;
 
-    int version = binaryStringToInt(binaryString.substr(position, 3));
-    int id = binaryStringToInt(binaryString.substr(position+3, 3));
+    auto version = binaryStringToLongLong(binaryString.substr(position, 3));
+    auto id = binaryStringToLongLong(binaryString.substr(position+3, 3));
 
-    cout << "version: " + to_string(version) + ", id: " + to_string(id) << endl;
+    if (DEBUG)
+        cout << "version: " + to_string(version) + ", id: " + to_string(id) << endl;
     long long versionSum = version;
 
     if (id == LITERAL_ID) {
@@ -86,32 +136,47 @@ long long parsePacket(const string& binaryString, long long& position, bool retu
         if (returnVersionSum) {
            return versionSum;
         }
-        return binaryStringToInt(val);
+        auto res = binaryStringToLongLong(val);
+        if (DEBUG)
+            cout << "Literal Value=" + to_string(res) << endl;
+        return res;
     } else {
         vector<long long> values = {};
         char operatorId = binaryString[position+HEADER_SIZE];
         if (operatorId == '0') {
             position += NESTED_PACKET_HEADER_SIZE;
-            int nestedSize = binaryStringToInt(binaryString.substr(position, NESTED_SIZE_LEN));
-            cout << "parsing sub-packets with size " + to_string(nestedSize) << endl;
+            auto nestedSize = binaryStringToLongLong(binaryString.substr(position, NESTED_SIZE_LEN));
+            if (DEBUG)
+                cout << "parsing sub-packets with size " + to_string(nestedSize) << endl;
             long long length = position + NESTED_SIZE_LEN + nestedSize;
             position += NESTED_SIZE_LEN;
             while(position != length) {
                 values.push_back(parsePacket(binaryString, position, returnVersionSum));
             }
         } else {
-            long long packetCount = binaryStringToInt(binaryString.substr(position + NESTED_PACKET_HEADER_SIZE, NESTED_COUNT_LEN));
-            cout << "parsing " + to_string(packetCount) + " sub-packet(s) from " + binaryString.substr(position + NESTED_PACKET_HEADER_SIZE, NESTED_COUNT_LEN) << endl;
+            long long packetCount = binaryStringToLongLong(binaryString.substr(position + NESTED_PACKET_HEADER_SIZE, NESTED_COUNT_LEN));
+            if (DEBUG)
+                cout << "parsing " + to_string(packetCount) + " sub-packet(s) from " + binaryString.substr(position + NESTED_PACKET_HEADER_SIZE, NESTED_COUNT_LEN) << endl;
             position += (NESTED_PACKET_HEADER_SIZE + NESTED_COUNT_LEN);
             for(long long i = 0; i < packetCount; i++) {
                 values.push_back(parsePacket(binaryString, position, returnVersionSum));
             }
         }
+
         if (returnVersionSum) {
             return versionSum + getVectorSum(values);
         }
+        switch (id) {
+            case 0: return getVectorSum(values);
+            case 1: return getVectorProduct(values);
+            case 2: return getVectorMin(values);
+            case 3: return getVectorMax(values);
+            case 5: return getGreaterThan(values);
+            case 6: return getLessThan(values);
+            case 7: return getEqualTo(values);
+            default: return -1;
+        }
     }
-    return -1;
 }
 
 
@@ -119,5 +184,6 @@ int main() {
     string input = getBinaryInput("input.txt");
     long long position = 0;
 
-    cout << "Part 1: " + to_string(parsePacket(input, position, true)) << endl;
+    // cout << "Part 1: " + to_string(parsePacket(input, position, true)) << endl;
+    cout << "Part 2: " + to_string(parsePacket(input, position, false)) << endl;
 }
