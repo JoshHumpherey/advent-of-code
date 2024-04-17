@@ -184,6 +184,6 @@ int main() {
     string input = getBinaryInput("input.txt");
     long long position = 0;
 
-    // cout << "Part 1: " + to_string(parsePacket(input, position, true)) << endl;
+    cout << "Part 1: " + to_string(parsePacket(input, position, true)) << endl;
     cout << "Part 2: " + to_string(parsePacket(input, position, false)) << endl;
 }
