@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bufio"
+	"advent-of-code/lib"
 	"fmt"
-	"os"
 	"strconv"
 	"unicode"
 )
@@ -19,22 +18,6 @@ var VALS = map[string]int{
 	"seven": 7,
 	"eight": 8,
 	"nine":  9,
-}
-
-func getInput(filePath string) ([]string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	lines := make([]string, 0)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	return lines, nil
 }
 
 func getNumber(line string) int {
@@ -113,7 +96,7 @@ func getModifiedCalibrationSum(lines []string) (int, error) {
 }
 
 func main() {
-	lines, err := getInput("input.txt")
+	lines, err := lib.ParseStrings("input.txt")
 	if err != nil {
 		panic(err)
 	}
