@@ -3,7 +3,10 @@ package main
 import (
 	"advent-of-code/lib"
 	"fmt"
+	"os"
+	"os/exec"
 	"sync"
+	"time"
 )
 
 type Direction int
@@ -53,6 +56,36 @@ func (g *grid) alreadyVisited(r, c int, dir Direction) bool {
 		}
 	}
 	return false
+}
+
+func (g *grid) print() {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+
+	for r := range g.matrix {
+		row := ""
+		for c := range g.matrix[0] {
+			if r == g.guard[0] && c == g.guard[1] {
+				switch g.dir {
+				case Up:
+					row += "^"
+				case Right:
+					row += ">"
+				case Down:
+					row += "v"
+				case Left:
+					row += "<"
+				default:
+					row += "*"
+				}
+			} else {
+				row += g.matrix[r][c]
+			}
+		}
+		fmt.Println(row)
+	}
+	time.Sleep(200 * time.Millisecond)
 }
 
 func getGrid(filePath string) (grid, error) {
@@ -150,6 +183,7 @@ func getGuardVisitedCount(g grid) int {
 
 		g.guard = []int{r, c}
 		g.addDir(r, c, g.dir)
+		g.print()
 	}
 	return g.getVisitedCount()
 }
