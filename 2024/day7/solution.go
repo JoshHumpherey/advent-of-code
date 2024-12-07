@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type equation struct {
@@ -76,9 +77,11 @@ func main() {
 		panic(err)
 	}
 
+	p1Start := time.Now()
 	part1 := getTotalValidCombinations(equations, false)
-	fmt.Printf("Part 1: %d\n", part1)
+	fmt.Printf("Part 1: %d (%s)\n", part1, time.Since(p1Start))
 
+	p2Start := time.Now()
 	part2 := getTotalValidCombinations(equations, true)
-	fmt.Printf("Part 2: %d\n", part2)
+	fmt.Printf("Part 2: %d (%s)\n", part2, time.Since(p2Start))
 }

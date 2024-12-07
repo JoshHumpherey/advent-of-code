@@ -77,23 +77,16 @@ elif [ "$lang" = "golang" ]; then
     echo "package main
 
   import (
-    \"bufio\"
+    \"advent-of-code/lib\"
     \"fmt\"
     \"os\"
+    \"time\"
   )
 
   func getInput(filePath string) ([]string, error) {
-    file, err := os.Open(filePath)
+    lines, err := lib.ParseStrings(filePath)
     if err != nil {
       return nil, err
-    }
-    defer file.Close()
-
-    scanner := bufio.NewScanner(file)
-    scanner.Split(bufio.ScanLines)
-    lines := make([]string, 0)
-    for scanner.Scan() {
-      lines = append(lines, scanner.Text())
     }
     return lines, nil
   }
@@ -108,8 +101,9 @@ elif [ "$lang" = "golang" ]; then
       panic(err)
     }
 
+    p1Start := time.Now()
     part1 := dummy(lines)
-    fmt.Printf(\"Part 1: %d\n\", part1)
+    fmt.Printf(\"Part 1: %d (%s)\n\", part1, time.Since(p1Start))
   }" > "$year/day$day/solution.go"
   fi
 else
