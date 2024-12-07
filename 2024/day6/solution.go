@@ -84,6 +84,28 @@ func getGrid(filePath string) (grid, error) {
 	}, nil
 }
 
+func cloneGrid(g grid) grid {
+	matrix := [][]string{}
+	visited := make([][][]Direction, 0)
+
+	for r := range g.matrix {
+		matrixRow := []string{}
+		visitedRow := [][]Direction{}
+		for c := range g.matrix[0] {
+			matrixRow = append(matrixRow, g.matrix[r][c])
+			visitedRow = append(visitedRow, g.visited[r][c])
+		}
+		matrix = append(matrix, matrixRow)
+		visited = append(visited, visitedRow)
+	}
+	return grid{
+		matrix:  matrix,
+		visited: visited,
+		guard:   g.guard,
+		dir:     g.dir,
+	}
+}
+
 func getNextDir(d Direction) Direction {
 	switch d {
 	case Up:
@@ -132,13 +154,8 @@ func getGuardVisitedCount(g grid) int {
 	return g.getVisitedCount()
 }
 
-func hasCycle(filePath string, rr, cc int, res chan bool, wg *sync.WaitGroup) {
+func hasCycle(g grid, rr, cc int, res chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
-	g, err := getGrid(filePath)
-	if err != nil {
-		res <- false
-		return
-	}
 	if g.matrix[rr][cc] == "#" {
 		res <- false
 		return
@@ -164,17 +181,16 @@ func hasCycle(filePath string, rr, cc int, res chan bool, wg *sync.WaitGroup) {
 		g.addDir(r, c, g.dir)
 	}
 	res <- false
-	return
 }
 
-func getTotalCycleCount(filePath string, origGrid grid) int {
-	results := make(chan bool, len(origGrid.matrix)*len(origGrid.matrix[0]))
+func getTotalCycleCount(g grid) int {
+	results := make(chan bool, len(g.matrix)*len(g.matrix[0]))
 	var wg sync.WaitGroup
 
-	for r := range origGrid.matrix {
-		for c := range origGrid.matrix[0] {
+	for r := range g.matrix {
+		for c := range g.matrix[0] {
 			wg.Add(1)
-			go hasCycle(filePath, r, c, results, &wg)
+			go hasCycle(cloneGrid(g), r, c, results, &wg)
 		}
 	}
 	wg.Wait()
@@ -190,14 +206,14 @@ func getTotalCycleCount(filePath string, origGrid grid) int {
 }
 
 func main() {
-	grid, err := getGrid("input.txt")
+	g, err := getGrid("input.txt")
 	if err != nil {
 		panic(err)
 	}
 
-	part1 := getGuardVisitedCount(grid)
+	part1 := getGuardVisitedCount(cloneGrid(g))
 	fmt.Printf("Part 1: %d\n", part1)
 
-	part2 := getTotalCycleCount("input.txt", grid)
+	part2 := getTotalCycleCount(cloneGrid(g))
 	fmt.Printf("Part 2: %d\n", part2)
 }
