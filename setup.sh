@@ -25,13 +25,27 @@ if [ "$lang" = "python" ]; then
     export PYTHONPATH=.
 
     if [ ! -f "$year/day$day/solution.py" ]; then
-      echo "from lib.parse import parse_strings
+      echo "import time
+from typing import List
+from lib.parse import parse_strings
 
-def example() -> None:
+def get_input() -> List[str]:
     data = parse_strings(\"$year/day$day/input.txt\")
-    return None
+    return data
     
-print(example())" > "$year/day$day/solution.py"
+def dummy() -> int:
+    return 0
+
+def main() -> None:
+    inp = get_input()
+
+    p1_start = time.perf_counter()
+    part1 = dummy()
+    p1_end = time.perf_counter()
+    p1_elapsed = p1_start - p1_end
+    print(f\"Part 1: {str(part1)} ({{p1_elapsed:.2f}})\")
+
+main()" > "$year/day$day/solution.py"
     fi
 elif [ "$lang" = "rust" ]; then
     # Initialize w/ Cargo
