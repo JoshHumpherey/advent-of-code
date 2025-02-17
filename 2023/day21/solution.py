@@ -1,6 +1,5 @@
 from typing import List
 from lib.parse import parse_string_grid
-import numpy as np
 
 DIRS = [[-1,0], [1,0], [0,-1], [0,1]]
 EMPTY = {".", "S"}

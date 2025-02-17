@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import List
 from lib.parse import parse_string_groups
 import concurrent.futures
 

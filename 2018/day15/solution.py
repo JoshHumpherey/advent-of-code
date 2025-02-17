@@ -1,7 +1,7 @@
 from enum import Enum
 import os
 import time
-from typing import List, Tuple
+from typing import List
 import uuid
 from lib.parse import parse_string_grid
 

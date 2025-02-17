@@ -1,7 +1,6 @@
 from typing import List
 from lib.parse import parse_strings
 from lib.initialize import create_grid
-from lib.pretty_print import print_grid
 
 class Claim:
 

@@ -1,7 +1,6 @@
 from typing import List, Tuple
 from lib.parse import parse_integer_pairs
 from lib.initialize import create_grid
-from lib.pretty_print import print_grid
 
 def manhattan_dist(point_1: Tuple[int, int], point_2: Tuple[int, int]) -> int:
     x1, y1 = point_1

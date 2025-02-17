@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from lib.parse import parse_string_groups
 from collections import defaultdict
 from math import prod

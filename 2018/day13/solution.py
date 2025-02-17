@@ -1,10 +1,8 @@
-from ast import Tuple
 import os
 import time
 from typing import List
 import uuid
 from lib.parse import parse_string_grid
-from lib.pretty_print import print_grid
 from enum import Enum
 
 TICK_LEN = 0.5

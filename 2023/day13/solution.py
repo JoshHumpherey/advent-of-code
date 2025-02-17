@@ -1,6 +1,5 @@
-from typing import List, Tuple
+from typing import List
 from lib.parse import parse_string_groups
-from collections import defaultdict
 import copy
 
 def print_grid(grid: List[str], row: int, col: int) -> None:

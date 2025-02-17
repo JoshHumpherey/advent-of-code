@@ -1,9 +1,6 @@
 from lib.parse import parse_strings
-from lib.initialize import create_grid
-from lib.pretty_print import print_grid
 from typing import Tuple, List
 import time
-import os
 import re
 
 SIMULATION_DURATION = 0.5

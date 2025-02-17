@@ -1,5 +1,4 @@
 from enum import Enum
-import sys
 from typing import List
 from lib.parse import parse_strings
 

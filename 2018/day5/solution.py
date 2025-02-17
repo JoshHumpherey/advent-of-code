@@ -1,4 +1,4 @@
-from lib.parse import parse_integers, parse_strings
+from lib.parse import parse_strings
 
 def reduce(polymer: str) -> str:
     while True:
