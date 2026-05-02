@@ -1,53 +1,46 @@
 class Lanternfish:
     def __init__(self):
-        self.fish = {}
-        self.cycles = 256
-        self.reset = 6
-        self.birth = 8
-        
-    def sum(self):
+        self.counts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0}
+        self.new_fish_cycle = 8
+        self.repeated_fish_cycle = 6
+
+    def advance(self) -> None:
+        new_counts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0}
+        for i in range(0, self.new_fish_cycle+1):
+            if i == self.repeated_fish_cycle:
+                new_counts[self.repeated_fish_cycle] = self.counts[0] + self.counts[i+1]
+            elif i == self.new_fish_cycle:
+                new_counts[self.new_fish_cycle] = self.counts[0]
+            else:
+                new_counts[i] = self.counts[i+1]
+
+        self.counts = new_counts
+    
+    def total(self) -> int:
         total = 0
-        for amt in self.fish.values():
-            total += amt
+        for v in self.counts.values():
+            total += v
         return total
 
-def get_fish() -> Lanternfish:
-    with open('day6/input.txt') as f:
-        data = f.readlines()[0]
-        split_str = data.split(',')
-        nums = []
-        for s in split_str:
-            nums.append(int(s))
-
-        l = Lanternfish()
-        for i in range(0, l.birth+1):
-            l.fish[i] = 0
-
-        for age in nums:
-            l.fish[age] += 1
-
-        return l
-
-
-def part1() -> int:
-    l = get_fish()
-    for i in range(l.cycles):
-        print(f"Simulating day {i}")
-        new_state = {}
-        for age in range(0, l.birth+1):
-            new_state[age] = 0
-        
-        for age, amt in l.fish.items():
-            if age == 0:
-                new_state[l.reset] += amt
-                new_state[l.birth] += amt
-            else:
-                new_state[age-1] += amt
-        l.fish = new_state
-
-    return l.sum()
-        
-            
+def get_input() -> Lanternfish:
+    lanternfish = Lanternfish()
+    with open('input.txt', 'r') as file:
+        for line in file:
+            raw_nums = line.strip().split(',')
+            for n in raw_nums:
+                key = int(n)
+                lanternfish.counts[key] += 1
     
+    return lanternfish
 
-    
+def get_cycle_count(l: Lanternfish, cycles: int) -> int:
+    for _ in range(cycles):
+        l.advance()
+
+    return l.total()
+
+p1 = get_cycle_count(get_input(), 80)
+print(p1)
+
+p2 = get_cycle_count(get_input(), 256)
+print(p2)

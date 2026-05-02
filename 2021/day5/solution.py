@@ -1,91 +1,95 @@
-from bresenham import bresenham
+from dataclasses import dataclass
+from typing import Iterator, List
 
-GRID_SIZE = 1000
+@dataclass
+class Pair:
+    x: int
+    y: int
 
-class Coordinate:
-    def __init__(self, c, r):
-        self.c = c
-        self.r = r
+@dataclass
+class Line:
+    p1: Pair
+    p2: Pair
 
-    def to_pair(self):
-        return [self.c, self.r]
-            
-class Map:
-        
-    def __init__(self):
-        self.grid = [[0]*GRID_SIZE for _ in range(GRID_SIZE)]
-        self.threshold = 1
-        
-    def add_line(self, p1: Coordinate, p2: Coordinate) -> None:
-        if p1.c == p2.c: # straight vertical line
-            for r in range(min(p1.r, p2.r), max(p1.r, p2.r)+1):
-                self.grid[r][p1.c] += 1
-        elif p1.r == p2.r: # straight horizontal line 0,9 -> 5,9
-            for c in range(min(p1.c, p2.c), max(p1.c, p2.c)+1):
-                self.grid[p1.r][c] += 1
-        else: # diagonal
-            self.plot_diagonal(p1, p2)
-            
-    def plot_diagonal(self, p1: Coordinate, p2: Coordinate):
-        """ Plot using Breshnam's Algorithm """
-        points = list(bresenham(p1.c, p1.r, p2.c, p2.r))
-        for r, c in points:
-            self.grid[c][r] += 1
-        return
-            
-    def intersections(self) -> int:
-        count = 0
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                if self.grid[r][c] > self.threshold:
-                    count += 1
-        return count
+@dataclass
+class Grid:
+    size = 1_000
+    def __post_init__(self):
+        self.grid = []
+        for _ in range(self.size):
+            grid_row = []
+            for _ in range(self.size):
+                grid_row.append(0)
+            self.grid.append(grid_row)
 
     def print(self) -> None:
+        print()
+        for r in range(len(self.grid)):
+            prett_row = ""
+            for c in range(len(self.grid[0])):
+                prett_row += str(self.grid[r][c])
+            print(prett_row)
+        print()
+    
+    def count(self, threshold: int) -> int:
+        total = 0
         for r in range(len(self.grid)):
             for c in range(len(self.grid[0])):
-                if self.grid[r][c] == 0:
-                    self.grid[r][c] = '.'
-                else:
-                    self.grid[r][c] = str(self.grid[r][c])
-
-        for row in self.grid:
-            print(row)
-                
+                if self.grid[r][c] >= threshold:
+                    total += 1
+        
+        return total
 
 
+def points_on_line(line: Line) -> Iterator[Pair]:
+    dx = line.p2.x - line.p1.x
+    dy = line.p2.y - line.p1.y
 
-def create_pairs():
-    pairs = []
-    with open('day5/input.txt') as f:
-        lines = f.readlines()
-        for l in lines:
-            p1, p2 = l.split('->')
-            p1 = p1.strip()
-            p2 = p2.strip()
+    if dx != 0 and dy != 0 and abs(dx) != abs(dy):
+        raise ValueError(f"unsupported line: {line}")
 
-            x1, y1 = p1.split(',')
-            x2, y2 = p2.split(',')
-            x1, y1 = int(x1), int(y1)
-            x2, y2 = int(x2), int(y2)
-            pairs.append([Coordinate(x1, y1), Coordinate(x2, y2)])
-    return pairs
+    step_x = 0 if dx == 0 else dx // abs(dx)
+    step_y = 0 if dy == 0 else dy // abs(dy)
+    steps = max(abs(dx), abs(dy))
 
-def part1() -> int:
-    pairs = create_pairs()
-    m = Map()
+    for step in range(steps + 1):
+        yield Pair(
+            x=line.p1.x + step * step_x,
+            y=line.p1.y + step * step_y,
+        )
 
-    for p1, p2 in pairs:
-        m.add_line(p1, p2)
 
-    return m.intersections()
+def get_input() -> List[Line]:
+    with open('input.txt', 'r') as file:
+        lines = []
+        for line in file:
+            l = line.strip()
+            raw1, raw2 = l.split(' -> ')
+            data1, data2 = raw1.split(','), raw2.split(',')
+            p1, p2 = Pair(int(data1[0]), int(data1[1])), Pair(int(data2[0]), int(data2[1]))
+            lines.append(Line(p1, p2))
+
+        return lines
+
+def count_overlaps(lines: List[Line], count_diagonal: bool, threshold: int) -> int:
+    grid = Grid()
+    for l in lines:
+        points = []
+        if (l.p1.x == l.p2.x or l.p1.y == l.p2.y) or count_diagonal:
+            points = points_on_line(line=l)
+        elif count_diagonal:
+            points = points_on_line(line=l)
+
+        for p in points:
+            grid.grid[p.y][p.x] += 1
     
+    return grid.count(threshold=threshold)
 
-def part2() -> int:
-    pairs = create_pairs()
-    m = Map()
 
-    for p1, p2 in pairs:
-        m.add_line(p1, p2)
+puzzle_input = get_input()
 
-    return m.intersections()
+p1 = count_overlaps(lines=puzzle_input, count_diagonal=False, threshold=2)
+print(p1)
+
+p2 = count_overlaps(lines=puzzle_input, count_diagonal=True, threshold=2)
+print(p2)

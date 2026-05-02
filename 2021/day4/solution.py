@@ -1,138 +1,130 @@
-BLOCK_SIZE = 6
-BOARD_SIZE = 5
+from dataclasses import dataclass
+from typing import List, Tuple
 
-class Bingo:
+@dataclass
+class Board:
+    grid: List[List[str]]
+    called: List[List[bool]]
+    won: bool = False
 
-    class Square:
-        val = float('inf')
-        called = False
-
-    def __init__(self, values):
-        self.board = [ [0]*BOARD_SIZE for _ in range(BOARD_SIZE) ]
-
-        for r in range(len(self.board)):
-            for c in range(len(self.board[0])):
-                self.board[r][c] = self.Square()
-
-        for r in range(len(values)):
-            for c in range(len(values[0])):
-                self.board[r][c].val = values[r][c]
-
-    def print_board(self) -> None:
-        print("******************")
-        for row in self.board:
-            pretty_r = []
-            for sq in row:
-                pretty_r.append([sq.val, sq.called])
-            print(pretty_r)
-        print("******************")
-
-    def mark_board(self, candidate) -> None:
-        for r in range(len(self.board)):
-            for c in range(len(self.board[0])):
-                if self.board[r][c].val == candidate:
-                    self.board[r][c].called = True
+    def mark(self, num: str) -> None:
+        for r in range(len(self.grid)):
+            for c in range(len(self.grid[0])):
+                if self.grid[r][c] == num:
+                    self.called[r][c] = True
 
     def has_bingo(self) -> bool:
-        # Check all rows for a bingo
-        for row in self.board:
-            has_bingo = True
-            for sq in row:
-                if sq.called == False:
-                    has_bingo = False
+        # check horizontal
+        for r in range(len(self.grid)):
+            all_true = True
+            for c in range(len(self.grid[0])):
+                if not self.called[r][c]:
+                    all_true = False
                     break
-            if has_bingo:
+            if all_true:
+                self.won = True
                 return True
 
-        # Check all columns for a bingo
-        for c in range(len(self.board[0])):
-            has_bingo = True
-            for r in range(len(self.board)):
-                sq = self.board[r][c]
-                if sq.called == False:
-                    has_bingo = False
+        # check vertical
+        for c in range(len(self.grid[0])):
+            all_true = True
+            for r in range(len(self.grid)):
+                if not self.called[r][c]:
+                    all_true = False
                     break
-            if has_bingo:
+            if all_true:
+                self.won = True
                 return True
 
         return False
 
-    def sum(self) -> int:
-        total = 0
-        for r in range(len(self.board)):
-            for c in range(len(self.board[0])):
-                if not self.board[r][c].called:
-                    total += self.board[r][c].val
-        return total
+    def score(self, num: int) -> int:
+        uncalled_sum = 0
+        for r in range(len(self.grid)):
+            for c in range(len(self.grid[0])):
+                if not self.called[r][c]:
+                    uncalled_sum += int(self.grid[r][c])
+        
+        return uncalled_sum * int(num)
     
+@dataclass
+class Callouts:
+    nums: List[str]
 
-def create_boards():
-    with open('day4/input.txt') as f:
-        lines = f.readlines()
-        boards = []
-        for i in range(1, len(lines), BLOCK_SIZE):
-            board_data = []
-            for j in range(i, i+BLOCK_SIZE):
-                if j == i:
-                    continue
-                else:
-                    converted_data = []
-                    row = lines[j] + "@"
-                    last = ''
-                    
-                    for char in row:
-                        if char.isnumeric():
-                            last += char
-                        elif last != '':
-                            converted_data.append(int(last))
-                            last = ''
+def create_board(raw_board: List[List[str]]) -> Board:
+    b = Board([], [])
+    for row in raw_board:
+        normalized_row = []
+        curr = ""
+        for c in row:
+            if c.isnumeric():
+                curr += c
+            elif curr != "":
+                normalized_row.append(curr)
+                curr = ""
+        normalized_row.append(curr)
+        b.grid.append(normalized_row)
+    
+    for _ in range(len(b.grid)):
+        row = []
+        for _ in range(len(b.grid[0])):
+            row.append(False)
+        b.called.append(row)
 
-                    board_data.append(converted_data)
-            b = Bingo(values=board_data)
-            boards.append(b)
+    return b
 
-        return boards
-
-def create_numbers():
-    with open('day4/input.txt') as f:
-        lines = f.readlines()
-
-        strnums = lines[0].split(',')
-        numbers = []
-        for s in strnums:
-            numbers.append(int(s))
-        return numbers
-
-        
-def part1() -> int:
-    boards, numbers = create_boards(), create_numbers()
-
-    for num in numbers:
-        for b in boards:
-            b.mark_board(candidate=num)
-        
-        for b in boards:
-            if b.has_bingo():
-                return num * b.sum()
-    return 0
-                    
-
-def part2() -> int:
-    boards, numbers = create_boards(), create_numbers()
-
-    for num in numbers:
-        remaining_boards = []
-        for b in boards:
-            b.mark_board(candidate=num)
-
-        for b in boards:
-            if b.has_bingo() and len(boards) == 1:
-                return b.sum() * num
-            elif b.has_bingo() and len(boards) > 1:
-                continue
+def get_input() -> Tuple[Callouts, List[Board]]:
+    groups = []
+    local_group = []
+    with open('input.txt', 'r') as file:
+        for line in file:
+            l = line.strip()
+            if l == "":
+                groups.append(local_group)
+                local_group = []
             else:
-                remaining_boards.append(b)
-
-        boards = remaining_boards
-    return 0
+                local_group.append(l)
         
+        groups.append(local_group)
+
+    callouts = Callouts(groups[0][0].split(','))
+    boards = []
+    for i in range(1, len(groups)):
+        b = create_board(groups[i])
+        boards.append(b)
+    
+    return (callouts, boards)
+
+def get_first_bingo_score(callouts: Callouts, boards: List[Board]) -> int:
+    for n in callouts.nums:
+        for b in boards:
+            b.mark(num=n)
+            if b.has_bingo():
+                return b.score(num=n)
+    
+    return -1
+
+def get_last_winner(callouts: Callouts, boards: List[Board]) -> int:
+    total_boards = len(boards)
+    winners = 0
+
+    for n in callouts.nums:
+        for b in boards:
+            if b.won:
+                continue
+
+            b.mark(num=n)
+            if b.has_bingo():
+                winners += 1
+                if winners >= total_boards:
+                    return b.score(num=n)
+    
+    return -1
+
+callouts, boards = get_input()
+p1 = get_first_bingo_score(callouts, boards)
+print(p1)
+
+callouts, boards = get_input()
+p2 = get_last_winner(callouts, boards)
+print(p2)
