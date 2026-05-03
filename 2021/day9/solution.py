@@ -1,93 +1,82 @@
+from typing import List
+
 class Grid:
 
-    def __init__(self, numbers):
-        self.grid = [ [0]*len(numbers[0]) for _ in range(len(numbers)) ]
-        for r in range(0, len(numbers)):
-            for c in range(0, len(numbers[0])):
-                self.grid[r][c] = numbers[r][c]
+    def __init__(self, nums: List[List[int]]):
+        self.grid = nums
 
-    def is_low(self, row, col) -> bool:
-        candidate = self.get_val(row, col)
-        p1 = self.get_val(row+1, col)
-        p2 = self.get_val(row-1, col)
-        p3 = self.get_val(row, col+1)
-        p4 = self.get_val(row, col-1)
+    def is_low_value(self, r: int, c: int) -> bool:
+        up = self.get_val(r-1, c)
+        down = self.get_val(r+1, c)
+        left = self.get_val(r, c-1)
+        right = self.get_val(r, c+1)
+        val = self.get_val(r, c)
+        return val < up and val < down and val < left and val < right
 
-        if candidate < p1 and candidate < p2 and candidate < p3 and candidate < p4:
-            return True
-        return False
-        
-    def get_val(self, row, col) -> int:
-        if row >= len(self.grid) or row < 0 or col >= len(self.grid[0]) or col < 0:
-            return 99999
-        else:
-            return self.grid[row][col]
-
-    
-    
-    def basin(self, row, col) -> int:
-        size = 0
-        queue = [(row, col, self.grid[row][col])]
-        visited = set()
-        
-        while queue:
-            next_queue = []
-            for r,c,last in queue:
-                if ((r,c) in visited
-                    or r < 0 
-                    or r >= len(self.grid)
-                    or c < 0 or c >= len(self.grid[0])
-                    or self.grid[r][c] == 9
-                    or (self.grid[r][c] <= last and [row, col] != [r,c])
-                   ):
-                    continue
-                else:
-                    size += 1
-                    visited.add((r,c))
-                    next_queue.append((r+1, c, self.grid[r][c]))
-                    next_queue.append((r-1, c, self.grid[r][c]))
-                    next_queue.append((r, c+1, self.grid[r][c]))
-                    next_queue.append((r, c-1, self.grid[r][c]))
-            queue = next_queue
-        return size
-    
-    def print(self):
-        for row in self.grid:
-            print(row)
+    def get_val(self, r: int, c: int) -> int:
+        if r < 0 or c < 0 or r >= len(self.grid) or c >= len(self.grid[0]):
+            return float('inf')
+        return self.grid[r][c]
 
 def get_grid() -> Grid:
-    with open('day9/input.txt') as f:
+    with open('input.txt') as f:
         lines = f.readlines()
-        data = []
+        grid = []
         for l in lines:
             row = []
-            numstrs = l.strip()
-            for s in numstrs:
-                row.append(int(s.strip()))
-            data.append(row)
-        return Grid(numbers=data)
+            for val in l:
+                if val != '\n':
+                    row.append(int(val))
+            grid.append(row)
+        return Grid(nums=grid)
 
-def part1() -> int:
-    g = get_grid()
-    total = 0
+def get_low_value_sum(grid: Grid) -> int:
+    risk_value = 0
+    for r in range(len(grid.grid)):
+        for c in range(len(grid.grid[0])):
+            if grid.is_low_value(r, c):
+                risk_value += (grid.get_val(r,c) + 1)
     
-    for r in range(len(g.grid)):
-        for c in range(len(g.grid[0])):
-            if g.is_low(r, c):
-                total += 1 + g.grid[r][c]
+    return risk_value
 
-    return total
+def get_basin_size(grid: Grid, row: int, col: int) -> int:
+    queue = [(row,col,float('-inf'))]
+    visited = set()
 
-def part2() -> int:
-    g = get_grid()
-    sums = []
+    while queue:
+        next_queue = []
+        for r,c,p in queue:
+            if (r,c) in visited or grid.get_val(r,c) <= p:
+                continue
+            else:
+                visited.add((r,c))
+                dirs = [[0,1], [0,-1], [1,0], [-1,0]]
+                for r_offset,c_offset in dirs:
+                    rr, cc = r + r_offset, c + c_offset
+                    if (rr,cc) not in visited and rr >= 0 and cc >= 0 and rr < len(grid.grid) and cc < len(grid.grid[0]) and grid.get_val(rr,cc) != 9:
+                        next_queue.append((rr, cc, grid.get_val(r,c)))
+        queue = next_queue
 
-    for r in range(len(g.grid)):
-        for c in range(len(g.grid[0])):
-            res = g.basin(r,c)
-            sums.append(res)
+    return len(visited)
 
-    sums.sort()
-    i = len(sums)
+def get_largest_basin_sizes(grid: Grid) -> int:
+    basins = []
+    for r in range(len(grid.grid)):
+        for c in range(len(grid.grid[0])):
+            if grid.is_low_value(r,c):
+                basin_size = get_basin_size(grid, r, c)
+                basins.append(basin_size)
     
-    return sums[i-1] * sums[i-2] * sums[i-3]
+    basins = sorted(basins)
+    n = len(basins)
+    return basins[n-1] * basins[n-2] * basins[n-3]
+
+
+
+
+
+p1 = get_low_value_sum(get_grid())
+print(p1)
+
+p2 = get_largest_basin_sizes(get_grid())
+print(p2)
