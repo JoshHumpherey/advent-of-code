@@ -1,79 +1,66 @@
-DAYS = 100
+from typing import List
+
+class Octopus:
+
+    def __init__(self, val: int, flashed: bool = False) -> None:
+        self.val = val
+        self.flashed = flashed
 
 class Grid:
 
-    class Octo:
-
-        def __init__(self, val):
-            self.val = val
-            self.flashed = False
-
-    def __init__(self, numbers):
-        self.grid = [ [0]*len(numbers[0]) for _ in range(len(numbers)) ]
-        for r in range(0, len(numbers)):
-            for c in range(0, len(numbers[0])):
-                self.grid[r][c] = self.Octo(val=numbers[r][c])
+    def __init__(self, nums: List[List[int]]):
+        self.octo: List[List[Octopus]] = []
         self.threshold = 9
-        self.baseline = 0
 
-    def get_surrounding_cells(self, r, c):
-        return  [[r+1,c],[r-1,c],[r,c+1],[r,c-1],[r+1, c+1],[r-1, c-1],[r+1, c-1],[r-1, c+1],]
+        for r in range(len(nums)):
+            row = []
+            for c in range(len(nums[0])):
+                row.append(Octopus(val=nums[r][c]))
+            self.octo.append(row)
 
-    def flash(self, r, c) -> int:
-        flashes = 1
-        self.grid[r][c].flashed = True
-        self.grid[r][c].val = self.baseline
-        
-        queue = self.get_surrounding_cells(r,c)
-        while queue:
-            next_queue = []
-            for row, col in queue:
-                if row >= 0 and row < len(self.grid) and col >= 0 and col < len(self.grid[0]) and not self.grid[row][col].flashed:
-                    self.grid[row][col].val += 1
-                    if self.grid[row][col].val > self.threshold:
-                        flashes += 1
-                        self.grid[row][col].val = self.baseline
-                        self.grid[row][col].flashed = True
-                        nearby = self.get_surrounding_cells(row, col)
-                        for n in nearby:
-                            next_queue.append(n)
-            queue = next_queue
-        return flashes
-            
-    def simulate_cycle(self) -> bool:
-        flashes = 0
-        
-        # Account for general energy increase
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                self.grid[r][c].val += 1
+    def flash(self, r: int, c: int) -> None:
+        if r < 0 or c < 0 or r >= len(self.octo) or c >= len(self.octo[0]):
+            return
+        elif self.octo[r][c].flashed:
+            return
+        else:
+            self.octo[r][c].val += 1
+            if self.octo[r][c].val > self.threshold:
+                self.octo[r][c].val = 0
+                self.octo[r][c].flashed = True
+                adj = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1],  [1, 0],  [1, 1]]
+                for r_offset, c_offset in adj:
+                    self.flash(r+r_offset, c+c_offset)
+    
+    def reset_flashes(self) -> int:
+        flashed = 0
+        for r in range(len(self.octo)):
+            for c in range(len(self.octo[0])):
+                if self.octo[r][c].flashed:
+                    flashed += 1
+                    self.octo[r][c].flashed = False
+        return flashed
+    
+    def increment(self) -> List[List[int]]:
+        to_flash = []
+        for r in range(len(self.octo)):
+            for c in range(len(self.octo[0])):
+                self.octo[r][c].val += 1
+                if self.octo[r][c].val > self.threshold:
+                    to_flash.append([r,c])
+        return to_flash
 
-        # Account for flashes triggering other flashes
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                if self.grid[r][c].val > self.threshold and not self.grid[r][c].flashed:
-                    flashes += self.flash(r,c)
-        
-        # Reset grid flash indicators and check if sync'd
-        sync = True
-        for r in range(len(self.grid)):
-            for c in range(len(self.grid[0])):
-                if self.grid[r][c].flashed: 
-                    self.grid[r][c].flashed = False
-                else:
-                    sync = False
-        return sync
 
-    def print(self) -> None:
-        for row in self.grid:
-            data = []
-            for oct in row:
-                data.append(oct.val)
-            print(data)
+    def cycle(self) -> int:
+        to_flash = self.increment()
+        for r,c in to_flash:
+            self.flash(r,c)
+        return self.reset_flashes()
+
 
 
 def get_grid() -> Grid:
-    with open('day11/input.txt') as f:
+    with open('input.txt') as f:
         lines = f.readlines()
         data = []
         for l in lines:
@@ -82,18 +69,26 @@ def get_grid() -> Grid:
             for s in numstrs:
                 row.append(int(s.strip()))
             data.append(row)
-        return Grid(numbers=data)
+        return Grid(nums=data)
+
+def get_flash_count(g: Grid, cycles: int):
+    total = 0
+    for _ in range(cycles):
+        total += g.cycle()
+    return total
+
+def get_simultaneous_count(g: Grid) -> int:
+    cycles = 0
+    total_cells = len(g.octo) * len(g.octo[0])
+    while True:
+        cycles += 1
+        flashes = g.cycle()
+        if flashes == total_cells:
+            return cycles
 
 
-def part1() -> int:
-    g = get_grid()
-    flashes = 0
-    
-    for day in range(1, 1000):
-        print(f"Simulating day {day}")
-        sync = g.simulate_cycle()
-        g.print()
-        if sync:
-            return day
+p1 = get_flash_count(get_grid(), 100)
+print(p1)
 
-    return flashes
+p2 = get_simultaneous_count(get_grid())
+print(p2)
