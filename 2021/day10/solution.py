@@ -1,78 +1,88 @@
-class Score:
+from typing import List
 
-    def __init__(self):
-        self.score_mapping = {
-            ')': 1,
-            ']': 2,
-            '}': 3,
-            '>': 4,
-        }
-        self.brackets = {
-            '(': ')',
-            '[': ']',
-            '{': '}',
-            '<': '>'
-        }
-        self.multiplier = 5
-        self.scores = []
-        self.total = 0
+
+CORRUPTED_SCORES = {
+    ')': 3,
+    ']': 57,
+    '}': 1197,
+    '>': 25137,
+}
+INCOMPLETE_SCORES = {
+    ')': 1,
+    ']': 2,
+    '}': 3,
+    '>': 4,
+}
+BRACKETS = {
+    '(': ')',
+    '[': ']',
+    '{': '}',
+    '<': '>'
+}
 
 
 def get_inputs():
-    with open('day10/input.txt') as f:
+    with open('input.txt') as f:
         data = []
         lines = f.readlines()
         for l in lines:
             data.append(l.strip())
         return data
 
+def score_autocomplete(s: str) -> int:
+    total = 0
+    for i in range(len(s)):
+        total *= 5
+        total += INCOMPLETE_SCORES[s[i]]
+    
+    return total
 
-def part1() -> int:
-    s = Score()
-    inputs = get_inputs()
-
-    for data in inputs:
-        stack = []
-        for char in data:
-            if char in s.brackets:
-                stack.append(char)
-            elif stack and s.brackets[stack[-1]] == char:
-                stack.pop()
+def score_line(line: str, count_corrupted: bool) -> int:
+    stack = []
+    for char in line:
+        if char in BRACKETS.keys():
+            stack.append(char)
+        elif len(stack) > 0:
+            val = stack.pop()
+            if BRACKETS[val] == char:
+                continue
             else:
-                s.total += s.score_mapping[char]
-                break
+                if count_corrupted:
+                    return CORRUPTED_SCORES[char]
+                else:
+                    return 0
+    
+    if not count_corrupted:
+        remaining = ""
+        while stack:
+            val = stack.pop()
+            remaining += BRACKETS[val]
+        return score_autocomplete(remaining)
+    else:
+        return 0
 
-    return s.total
 
-def part2() -> int:
-    s = Score()
-    inputs = get_inputs()
+def get_scores(lines: List[str], count_corrupted: bool) -> int:
+    scores = []
 
-    for data in inputs:
-        stack = []
-        corrupted = False
-        for char in data:
-            if char in s.brackets:
-                stack.append(char)
-            elif stack and s.brackets[stack[-1]] == char:
-                stack.pop()
-            else:
-                corrupted = True
-                break
+    for l in lines:
+        s = score_line(l, count_corrupted)
+        if count_corrupted:
+            scores.append(s)
+        elif s != 0:
+            scores.append(s)
+    
+    scores = sorted(scores)
+    if count_corrupted:
+        return sum(scores)
+    else:
+        return scores[len(scores) // 2]
 
-        if not corrupted:
-            temp_score = 0
+p1 = get_scores(lines=get_inputs(), count_corrupted=True)
+print(p1)
 
-            while stack:
-                char = stack.pop()
-                temp_score *= s.multiplier
-                temp_score += s.score_mapping[s.brackets[char]]
-
-            s.scores.append(temp_score)
-
-    s.scores.sort()
-    return s.scores[len(s.scores) // 2]
-                
+p2 = get_scores(lines=get_inputs(), count_corrupted=False)
+print(p2)
             
                 
                 
