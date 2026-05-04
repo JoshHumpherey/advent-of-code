@@ -1,80 +1,82 @@
+from typing import Dict, List
+
+
 class Graph:
-    
-    def __init__(self):
-        self.map = {}
-        self.small_lim = 2
-        
-    def get_unique_paths(self, last_node, visited, path, bonus):
-        if last_node == self.map["end"]:
-            return [path]
-        paths = []
-        for next_node in last_node.neighbors:
-            if (next_node not in visited or not next_node.small 
-                or (next_node.small 
-                    and not bonus 
-                    and next_node.id not in ["start", "end"]
-                    and next_node in visited 
-                   )
-               ):
-                next_bonus = False
-                if (next_node in visited and not bonus and next_node.small and next_node.id not in ["start","end"]) or bonus:
-                    next_bonus = True
-                    
-                new_set = set()
-                for v in visited:
-                    new_set.add(v)
-                new_set.add(next_node)
-                
-                u_paths = self.get_unique_paths(last_node=next_node,
-                                                visited=new_set,
-                                                path=path+f",{next_node.id}",
-                                                bonus=next_bonus)
-                for u in u_paths:
-                    paths.append(u)
-                    
-        return paths
 
-    
-class Node:
-    def __init__(self, small, id):
-        self.small = small
-        self.visited = 0
-        self.id = id
-        self.neighbors = set()
+    def __init__(self) -> None:
+        self.nodes = {}
 
-    def print(self) -> None:
-        print(f"{self.id}: small={self.small}, neighbors={len(self.neighbors)}")
-            
 def create_graph() -> Graph:
-    with open('day12/input.txt') as f:
-        graph = Graph()
+    with open('input.txt') as f:
+        g = Graph()
         lines = f.readlines()
         for l in lines:
             start, end = l.split('-')
             start,end = start.strip(), end.strip()
-            if start not in graph.map:
-                is_small = (start == start.lower())
-                graph.map[start] = Node(small=is_small, id=start)
-            if end not in graph.map:
-                is_small = (end == end.lower())
-                graph.map[end] = Node(small=is_small, id=end)
+            if start not in g.nodes:
+                g.nodes[start] = {end}
+            else:
+                g.nodes[start].add(end)
+            
+            if end not in g.nodes:
+                g.nodes[end] = {start}
+            else:
+                g.nodes[end].add(start)
 
-            graph.map[start].neighbors.add(graph.map[end])
-            graph.map[end].neighbors.add(graph.map[start])
-
-        graph.map["start"].visited = 2
-        graph.map["end"].visited = 2
-        return graph
+        return g
 
 
-def part1() -> int:
-    graph = create_graph()
+def get_unique_paths_simple(g: Graph, node: str, visited: set = set(), path: List[str] = []) -> int:
+    if node == "end":
+        # print(f"unique path: {path}")
+        return 1
+    elif node in visited and node.islower():
+        return 0
+
+    visited.add(node)
+    paths = 0
+    for next_node in g.nodes[node]:
+        visited_copy = set()
+        for v in visited:
+            visited_copy.add(v)
+        paths += get_unique_paths_simple(g, next_node, visited_copy, path + [next_node])
     
-    unique_paths = graph.get_unique_paths(
-        last_node=graph.map["start"],
-        visited={graph.map["start"]},
-        path="start",
-        bonus=False,
-    )
-    return len(set(unique_paths))
+    return paths
+
+def copy_dict(old: Dict) -> Dict:
+    new = {}
+    for key, val in old.items():
+        new[key] = val
+    return new
+
+def get_unique_paths_complex(g: Graph, node: str, visited: dict = {}, path: List[str] = [], visited_small: bool = False) -> int:
+    if node == "end":
+        # print(f"unique path: {path}")
+        return 1
+    elif node in visited:
+        if node.islower() and visited[node] >= 2:
+            return 0
+        elif node.islower() and visited[node] >= 1 and visited_small:
+            return 0
+        elif node == "start" and visited[node] >= 1:
+            return 0
+        
+    if node not in visited:
+        visited[node] = 1
+    else:
+        if node.islower() and not visited_small:
+            visited_small = True
+        visited[node] += 1
+    
+    paths = 0
+    for next_node in g.nodes[node]:
+        paths += get_unique_paths_complex(g, next_node, copy_dict(visited), path + [next_node], visited_small)
+    
+    return paths
+
+p1 = get_unique_paths_simple(create_graph(), "start", set(), ["start"])
+print(p1)
+
+p2 = get_unique_paths_complex(create_graph(), "start", {}, ["start"], False)
+print(p2)
             
